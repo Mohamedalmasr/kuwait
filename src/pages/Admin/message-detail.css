@@ -1,0 +1,152 @@
+/* ============ Message Detail (RTL) ============ */
+:root{
+  --bg: #ffffff;
+  --text: #0f1724;
+  --muted: #64748b;
+  --border: #e5e7eb;
+  --border-soft: #f1f5f9;
+  --primary: #1476f2;
+  --success-bg: #ecfdf5;
+  --success-fg: #065f46;
+  --danger-bg: #fff1f2;
+  --danger-fg: #9f1239;
+  --card: #ffffff;
+  --shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+
+.message-detail{
+  direction: rtl;
+  text-align: right;
+  padding: 20px;
+  color: var(--text);
+}
+
+/* رأس الصفحة وروابط الرجوع */
+.md-topbar{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.md-title{
+  margin: 6px 0 16px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* شارة الحالة */
+.badge{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  line-height: 20px;
+}
+.badge.unread{ background: var(--danger-bg); color: var(--danger-fg); }
+.badge.read{ background: var(--success-bg); color: var(--success-fg); }
+
+/* الكروت */
+.card_message {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin: 20px auto;
+  width: 100%;              /* ياخد العرض كله */
+  max-width: 800px;         /* أقصى عرض للكرت */
+  box-sizing: border-box;   /* يضمن البادينج جوه العرض */
+}
+
+.card-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.card-row {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.card-row strong {
+  min-width: 90px; /* عرض أكبر لعنوان الحقل */
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.msg-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-top: 10px;
+  line-height: 1.6;
+}
+
+
+/* أزرار عامة */
+.btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: none;
+  color: var(--text);
+}
+.btn:hover{ filter: brightness(0.98); }
+.btn:disabled{
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.btn.primary{
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.btn.danger{
+  background: var(--danger-bg);
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+/* شريط إجراءات أسفل الصفحة */
+.md-actions{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* روابط الاتصال */
+.contact-links{
+  display: inline-flex;
+  gap: 8px;
+  margin-inline-start: 8px;
+}
+.contact-links a{
+  color: var(--primary);
+  text-decoration: none;
+}
+.contact-links a:hover{
+  text-decoration: underline;
+}
+
+/* تجاوبية */
+@media (max-width: 768px){
+  .card-row{
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .btn{
+    padding: 7px 10px;
+    font-size: 13px;
+  }
+}

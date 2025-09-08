@@ -1,0 +1,178 @@
+.admin-navbar {
+  position: sticky;
+  top: 0;
+  inset-inline: 0;
+  z-index: 1000;
+  background: var(--bg, #fff);
+  border-bottom: 1px solid var(--border-soft, #eef2f7);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+}
+
+.navbar-brand .logo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text, #0f1724);
+}
+
+.navbar-links {
+  display: flex;
+  gap: 8px;
+}
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--text, #0f1724);
+}
+.nav-link:hover { background: var(--primary-50, #f1f5ff); }
+.nav-link.active { background: var(--primary-100, #e5edff); }
+
+.link-icon { font-size: 14px; }
+
+.navbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Notifications */
+.notifications-wrapper { position: relative; }
+.notifications-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--border, #e5e7eb);
+  background: var(--bg, #fff);
+  cursor: pointer;
+}
+.notifications-btn:hover { filter: brightness(0.98); }
+
+.bell-icon { font-size: 16px; }
+.badge {
+  position: absolute;
+  top: -4px;
+  inset-inline-end: -4px; /* يناسب RTL */
+  background: #ef4444;
+  color: #fff;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notifications-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  inset-inline-end: 0; /* RTL */
+  width: min(360px, 92vw);
+  max-height: 70vh;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 12px;
+  box-shadow: 0 12px 26px rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-soft, #f1f5f9);
+}
+.dropdown-header h4 { margin: 0; font-size: 14px; }
+.mark-all-read {
+  padding: 6px 10px;
+  border: 1px solid var(--border, #e5e7eb);
+  background: #fff;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.mark-all-read:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.notifications-list {
+  overflow: auto;
+  max-height: 50vh;
+  display: flex;
+  flex-direction: column;
+}
+.notification-item {
+  display: flex;
+  text-align: start;
+  width: 100%;
+  border: none;
+  background: #fff;
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-soft, #f1f5f9);
+}
+.notification-item:hover { background: #f9fafb; }
+.notification-item.unread { background: #fff7ed; }
+
+.notification-content {
+  display: grid;
+  gap: 4px;
+}
+.notification-message { margin: 0; color: var(--text, #0f1724); }
+.notification-time { color: #6b7280; }
+
+.empty-notifications {
+  padding: 18px;
+  text-align: center;
+  color: #6b7280;
+}
+.view-all-link {
+  display: block;
+  text-align: center;
+  padding: 10px 12px;
+  text-decoration: none;
+  border-top: 1px solid var(--border-soft, #f1f5f9);
+  color: var(--text, #0f1724);
+}
+.view-all-link:hover { background: #f9fafb; }
+
+/* Logout */
+.logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border, #e5e7eb);
+  background: var(--bg, #fff);
+  cursor: pointer;
+}
+.logout-btn:hover { filter: brightness(0.98); }
+.logout-icon { font-size: 14px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .navbar-links { display: none; } /* اختياري: اخفاء الروابط في الموبايل */
+}
+.messages-page {
+  padding: 16px;
+  background: var(--bg-soft, #f9fafb);
+  min-height: calc(100vh - 60px); /* افتراضياً ارتفاع النافبار 60px */
+  box-sizing: border-box;
+}

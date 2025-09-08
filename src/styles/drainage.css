@@ -1,0 +1,215 @@
+/* استيراد خط Marhey من جوجل */
+
+/* ✅ Page Header */
+.page-header {
+  background: #f5f5f5;
+  padding: 20px 30px;
+  border-bottom: 2px solid #ccc;
+  margin-bottom: 32px; /* أضف هذه الخاصية للمسافة */
+}
+.page-header .breadcrumb {
+  color: #888;
+  font-size: 14px;
+}
+.page-header h1 {
+  color: #222;
+  font-size: 32px;
+  margin-top: 10px;
+}
+
+/* ✅ Social Icons */
+.social-icons {
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  gap: 15px;
+  padding: 20px 0;
+}
+.social-icons a svg {
+  width: 28px;
+  height: 28px;
+  stroke: #004883;
+  transition: all 0.3s ease;
+}
+.social-icons a:hover svg {
+  stroke: #017ce3;
+  transform: scale(1.1);
+}
+
+/* ✅ Articles */
+.drainage-articles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.drainage-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px #00488322;
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+  border: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+}
+
+.drainage-card:hover {
+  box-shadow: 0 4px 24px #017de344;
+}
+
+.drainage-card-image img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-bottom: 1px solid #eee;
+}
+
+.drainage-card-content {
+  padding: 18px 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.drainage-card-content h3 {
+  font-size: 22px;
+  color: #222; /* لون العنوان أسود */
+  margin: 0 0 10px 0;
+}
+
+.drainage-card-content p {
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.drainage-card-content a {
+  align-self: flex-start;
+  color: #017de3;
+  font-weight: bold;
+  text-decoration: none;
+  transition: color 0.2s;
+  cursor: pointer;
+}
+
+.drainage-card-content a:hover {
+  color: #004883;
+  text-decoration: underline;
+}
+
+/* Sidebar Styling */
+.drainage-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.drainage-sidebar-box {
+  background: #f8f8f8;
+  border-radius: 10px;
+  box-shadow: 0 1px 6px #00488311;
+  padding: 18px 16px;
+  margin-bottom: 0;
+}
+
+.drainage-sidebar-title {
+  font-size: 18px;
+  color: #fff;
+  font-family: "Marhey", sans-serif;
+  font-weight: 700;
+  font-style: normal;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #222;
+  border: 1px solid #017de3;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+.drainage-sidebar-title svg {
+  color: #fff; /* لون الأيقونة أبيض */
+}
+
+.drainage-sidebar-list,
+.drainage-sidebar-categories {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.drainage-sidebar-list li,
+.drainage-sidebar-categories li {
+  margin-bottom: 8px;
+}
+
+.drainage-sidebar-list a,
+.drainage-sidebar-categories a {
+  color: #004883;
+  text-decoration: none;
+  font-size: 15px;
+  transition: color 0.2s;
+}
+
+.drainage-sidebar-list a:hover,
+.drainage-sidebar-categories a:hover {
+  color: #017de3;
+  text-decoration: underline;
+}
+
+.drainage-sidebar-categories span {
+  color: #888;
+  font-size: 13px;
+  margin-right: 4px;
+}
+
+/* Image Modal */
+.image-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.image-modal-content {
+  position: relative;
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  max-width: 90vw;
+  max-height: 90vh;
+  box-shadow: 0 4px 24px #00488344;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.image-modal-content img {
+  max-width: 80vw;
+  max-height: 70vh;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+.close-btn {
+  background: #017de3;
+  color: #fff;
+  border: none;
+  font-size: 28px;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.close-btn:hover {
+  background: #004883;
+}
