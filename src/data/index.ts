@@ -12,8 +12,11 @@ export type ContentSection = {
   text?: string;
   text2?: string;
   text3?: string;
+  text4?: string;
   html?: string;
   bullets?: string[];
+  img?: string;
+  question?: string;
 };
 
 export type MapInfo = {

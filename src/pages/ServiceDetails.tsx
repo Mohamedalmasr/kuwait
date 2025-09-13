@@ -10,6 +10,10 @@ import { ContentSection as DataContentSection } from "../data/index";
 
 type ContentSection = DataContentSection & {
   text2?: string;
+  text3?: string;
+  text4?: string;
+  question?: string;
+  img?: string;
 };
 
 type MapInfo = {
@@ -75,7 +79,18 @@ export default function ServiceDetails() {
                 ) : (
                   <>
                     {sec.text && <p className="section-text">{sec.text}</p>}
+                    {sec.img && (
+                      <div className="section-image-container">
+                        <img
+                          alt={sec.heading || "صورة"}
+                          src={sec.img}
+                          className="section-image"
+                          loading="lazy"
+                        />
+                      </div>
+                    )}
                     {sec.text3 && <p className="section-text">{sec.text3}</p>}
+                    {sec.text4 && <p className="section-text">{sec.text4}</p>}
                     {sec.bullets && sec.bullets.length > 0 && (
                       <ul className="section-bullets">
                         {sec.bullets.map((b, i) => (
@@ -83,6 +98,7 @@ export default function ServiceDetails() {
                         ))}
                       </ul>
                     )}
+                    {sec.question && <p className="section-question">{sec.question}</p>}
                     {sec.text2 && <p className="section-text">{sec.text2}</p>}
                   </>
                 )}

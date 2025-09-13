@@ -7,7 +7,10 @@ export type ServiceMaintenance = {
   text: string;
   text2?: string;
   text3?: string;
+  text4?: string;
   link: string;
+  question?: string;
+  
 };
 
 
