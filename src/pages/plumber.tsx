@@ -1,69 +1,67 @@
-import { FaFileAlt, FaFolder, FaTimes } from "react-icons/fa";
 import { useState } from "react";
+import { NavLink } from "react-router-dom";
+import { FaTimes, FaTools, FaSpinner } from "react-icons/fa";
+
+import "../styles/Home.css";
 import "../styles/plumber.css";
 
-type PlumberCardProps = {
+import { servicesPlumber } from "../data";
+import { generateServiceUrl } from "../utils/urls";
+import { slugify } from "../utils/slug";
+import SidebarWidgets from "./SidebarWidgets";
+
+type ServiceItem = {
+  id?: string | number;
   title: string;
-  img: string;
-  shortText: string;
-  expandedText: string;
+  text: string;
+  img?: string;
+  link?: string;
+  slug?: string;
+  urlSlug?: string;
 };
 
-const PlumberCard = ({
-  title,
-  img,
-  shortText,
-  expandedText,
-  onImageClick,
-}: PlumberCardProps & { onImageClick?: (src: string) => void }) => {
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <div className="plumber-card">
-      <div className="plumber-card-image">
-        <img
-          src={img}
-          alt={title}
-          style={{ cursor: "pointer" }}
-          onClick={() => onImageClick && onImageClick(img)}
-        />
-      </div>
-      <div className="plumber-card-content">
-        <h3>{title}</h3>
-        <p>
-          {shortText}
-          {expanded && <> {expandedText} </>}
-        </p>
-        <a
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            setExpanded(!expanded);
-          }}
-        >
-          {expanded ? "اقرأ أقل «" : "أكمل القراءة »"}
-        </a>
-      </div>
-    </div>
-  );
-};
+const PAGE_SIZE = 12;
 
 const Plumber = () => {
   const [openedImage, setOpenedImage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const closeImage = () => setOpenedImage(null);
+
+  const items = ((servicesPlumber as ServiceItem[]) || []);
+  const [visibleCount, setVisibleCount] = useState(Math.min(PAGE_SIZE, items.length));
+  const visible = items.slice(0, visibleCount);
+  const hasMore = visibleCount < items.length;
+
+  const toDetails = (item: ServiceItem, idx: number) => {
+    const generatedSlug = item.slug || item.urlSlug || slugify(item.title, "preserve-arabic");
+
+    return generateServiceUrl({
+      id: item.id ?? idx,
+      title: item.title,
+      slug: generatedSlug,
+      urlSlug: generatedSlug,
+      link: item.link,
+    });
+  };
+
+  const handleLoadMore = () => {
+    if (loading) return;
+    setLoading(true);
+    setTimeout(() => {
+      setVisibleCount((c) => Math.min(c + PAGE_SIZE, items.length));
+      setLoading(false);
+    }, 400);
+  };
 
   return (
     <div className="rtl" dir="rtl">
       {/* ✅ نافذة الصورة المكبرة */}
       {openedImage && (
         <div className="image-modal" onClick={closeImage}>
-          <div
-            className="image-modal-content"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
             <img src={openedImage} alt="صورة مكبرة" />
-            <button className="close-btn" onClick={closeImage}>
+            <button className="close-btn" onClick={closeImage} aria-label="Close">
               <FaTimes />
             </button>
           </div>
@@ -77,78 +75,63 @@ const Plumber = () => {
       </section>
 
       <div className="content-wrapper">
-        {/* ✅ Articles */}
-        <div className="plumber-articles">
-          <PlumberCard
-            title="سباك الكويت"
-            img="/image/img15.jpg"
-            shortText="سباك الكويت يقدم خدمات تسليك وصيانة السباكة باحترافية عالية."
-            expandedText="نستخدم أفضل المعدات ونوفر ضمان على جميع أعمال السباكة في الكويت."
-            onImageClick={setOpenedImage}
-          />
-          <PlumberCard
-            title="خدمات سباكة منزلية"
-            img="/image/img16.jpg"
-            shortText="خدمات سباكة منزلية متكاملة لجميع أنواع المنازل والشقق."
-            expandedText="خدمة سريعة وأسعار مناسبة لجميع العملاء في مختلف المناطق."
-            onImageClick={setOpenedImage}
-          />
-          {/* أضف المزيد بنفس الطريقة مع نصوص وصور مختلفة */}
-        </div>
+        {/* ✅ شبكة الكروت بنفس ستايل Home */}
+        <main className="page-main">
+          <section id="servicesPlumber" className="services-section">
+            <h2 className="section-title">
+              <span className="icon">
+                سباك الكويت <FaTools />
+              </span>
+            </h2>
 
-        {/* ✅ Sidebar */}
-        <div className="plumber-sidebar">
-          <div className="plumber-sidebar-box">
-            <div className="plumber-sidebar-title">
-              <FaFileAlt /> أحدث المقالات
-            </div>
-            <ul className="plumber-sidebar-list">
-              <li>
-                <a href="#">أفضل سباك الكويت</a>
-              </li>
-              <li>
-                <a href="#">خدمات السباكة المنزلية</a>
-              </li>
-              <li>
-                <a href="#">تسليك المجاري</a>
-              </li>
-              <li>
-                <a href="#">صيانة الأدوات الصحية</a>
-              </li>
-              <li>
-                <a href="#">أسعار السباكة في الكويت</a>
-              </li>
-            </ul>
-          </div>
+            <div className="services">
+              {visible.map((it, idx) => (
+                <div className="service-card" key={it.id ?? it.urlSlug ?? it.slug ?? idx}>
+                  {it.img && (
+                    <img
+                      src={it.img}
+                      alt={it.title || "خدمة"}
+                      loading="lazy"
+                      onClick={() => it.img && setOpenedImage(it.img)}
+                      style={{ cursor: "pointer" }}
+                    />
+                  )}
+                  <h3>{it.title}</h3>
+                  <p>{it.text}</p>
 
-          <div className="plumber-sidebar-box">
-            <div className="plumber-sidebar-title">
-              <FaFolder /> التصنيفات
+                  {/* ✅ "قراءة المزيد →" تودّي للـ slug */}
+                  <NavLink to={toDetails(it, idx)} className="read-more">
+                    قراءة المزيد →
+                  </NavLink>
+                </div>
+              ))}
             </div>
-            <ul className="plumber-sidebar-categories">
-              <li>
-                <a href="#">
-                  سباك الكويت <span>(24)</span>
-                </a>
-              </li>
-              <li>
-                <a href="#">
-                  خدمات منزلية <span>(13)</span>
-                </a>
-              </li>
-              <li>
-                <a href="#">
-                  تسليك مجاري <span>(94)</span>
-                </a>
-              </li>
-              <li>
-                <a href="#">
-                  تركيب أدوات صحية <span>(4)</span>
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
+
+            {/* ✅ زر إنستجرام: خفيف + سبينر، كل ضغطة تضيف 12 كرت */}
+            {hasMore && (
+              <div className="load-more-bar">
+                <button
+                  className="ig-load-more"
+                  onClick={handleLoadMore}
+                  disabled={loading}
+                  aria-busy={loading}
+                >
+                  {loading ? (
+                    <>
+                      <FaSpinner className="spin" aria-hidden="true" />
+                      جاري التحميل…
+                    </>
+                  ) : (
+                    "تحميل المزيد"
+                  )}
+                </button>
+              </div>
+            )}
+          </section>
+        </main>
+
+        {/* ✅ Sidebar مع البيانات المركزية */}
+        <SidebarWidgets />
       </div>
     </div>
   );
