@@ -1,70 +1,67 @@
-import { FaFileAlt, FaFolder, FaTimes } from "react-icons/fa";
 import { useState } from "react";
-import "../styles/installation.css"; // CSS خاص بالتركيب
+import { NavLink } from "react-router-dom";
+import { FaTimes, FaTools, FaSpinner } from "react-icons/fa";
 
-type InstallationCardProps = {
+import "../styles/Home.css";
+import "../styles/installation.css";
+
+import { servicesInstallation } from "../data";
+import { generateServiceUrl } from "../utils/urls";
+import { slugify } from "../utils/slug";
+import SidebarWidgets from "./SidebarWidgets";
+
+type ServiceItem = {
+  id?: string | number;
   title: string;
-  img: string;
-  shortText: string;
-  expandedText: string;
-  onImageClick?: (src: string) => void;
+  text: string;
+  img?: string;
+  link?: string;
+  slug?: string;
+  urlSlug?: string;
 };
 
-const InstallationCard = ({
-  title,
-  img,
-  shortText,
-  expandedText,
-  onImageClick,
-}: InstallationCardProps) => {
-  const [expanded, setExpanded] = useState(false);
+const PAGE_SIZE = 12;
 
-  return (
-    <div className="installation-card">
-      <div className="installation-card-image">
-        <img
-          src={img}
-          alt={title}
-          style={{ cursor: "pointer" }}
-          onClick={() => onImageClick && onImageClick(img)}
-        />
-      </div>
-      <div className="installation-card-content">
-        <h3>{title}</h3>
-        <p>
-          {shortText}
-          {expanded && <> {expandedText} </>}
-        </p>
-        <a
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            setExpanded(!expanded);
-          }}
-        >
-          {expanded ? "اقرأ أقل «" : "أكمل القراءة »"}
-        </a>
-      </div>
-    </div>
-  );
-};
-
-const installation = () => {
+const Installation = () => {
   const [openedImage, setOpenedImage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const closeImage = () => setOpenedImage(null);
+
+  const items = ((servicesInstallation as ServiceItem[]) || []);
+  const [visibleCount, setVisibleCount] = useState(Math.min(PAGE_SIZE, items.length));
+  const visible = items.slice(0, visibleCount);
+  const hasMore = visibleCount < items.length;
+
+  const toDetails = (item: ServiceItem, idx: number) => {
+    const generatedSlug = item.slug || item.urlSlug || slugify(item.title, "preserve-arabic");
+
+    return generateServiceUrl({
+      id: item.id ?? idx,
+      title: item.title,
+      slug: generatedSlug,
+      urlSlug: generatedSlug,
+      link: item.link,
+    });
+  };
+
+  const handleLoadMore = () => {
+    if (loading) return;
+    setLoading(true);
+    setTimeout(() => {
+      setVisibleCount((c) => Math.min(c + PAGE_SIZE, items.length));
+      setLoading(false);
+    }, 400);
+  };
 
   return (
     <div className="rtl" dir="rtl">
       {/* ✅ نافذة الصورة المكبرة */}
       {openedImage && (
         <div className="image-modal" onClick={closeImage}>
-          <div
-            className="image-modal-content"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
             <img src={openedImage} alt="صورة مكبرة" />
-            <button className="close-btn" onClick={closeImage}>
+            <button className="close-btn" onClick={closeImage} aria-label="Close">
               <FaTimes />
             </button>
           </div>
@@ -78,85 +75,62 @@ const installation = () => {
       </section>
 
       <div className="content-wrapper">
-        {/* ✅ Articles */}
-        <div className="installation-articles">
-          <InstallationCard
-            title="فني تركيب أدوات صحية"
-            img="/image/img21.jpg"
-            shortText="فني تركيب أدوات صحية يقدم لك أفضل خدمات تركيب وصيانة الأدوات الصحية بدقة واحترافية،"
-            expandedText="يستخدم أفضل الخامات والمعدات لضمان جودة التركيب وتجنب المشاكل المستقبلية في السباكة والصرف الصحي."
-            onImageClick={setOpenedImage}
-          />
-          <InstallationCard
-            title="تركيب مغاسل ومراحيض"
-            img="/image/img22.jpg"
-            shortText="نقوم بتركيب المغاسل والمراحيض بجودة عالية وضمان طويل المدى،"
-            expandedText="نعتمد على أحدث الأدوات والتقنيات لتثبيت القطع الصحية بشكل آمن وبدون تسريب."
-            onImageClick={setOpenedImage}
-          />
-        </div>
+        <main className="page-main">
+          <section id="servicesInstallation" className="services-section">
+            <h2 className="section-title">
+              <span className="icon">
+                فني تركيب أدوات صحية <FaTools />
+              </span>
+            </h2>
 
-        {/* ✅ Sidebar */}
-        <div className="installation-sidebar">
-          <div className="installation-sidebar-box">
-            <div className="installation-sidebar-title">
-              <FaFileAlt /> أحدث المقالات
-            </div>
-            <ul className="installation-sidebar-list">
-              <li>
-                <a href="#">أفضل طرق تركيب مغاسل الحمام</a>
-              </li>
-              <li>
-                <a href="#">تركيب خلاطات مياه إيطالية</a>
-              </li>
-              <li>
-                <a href="#">فني تركيب مراحيض ذكية</a>
-              </li>
-              <li>
-                <a href="#">تركيب حنفيات بدون لمس</a>
-              </li>
-              <li>
-                <a href="#">أخطاء يجب تجنبها عند تركيب السخان</a>
-              </li>
-            </ul>
-          </div>
+            <div className="services">
+              {visible.map((it, idx) => (
+                <div className="service-card" key={it.id ?? it.urlSlug ?? it.slug ?? idx}>
+                  {it.img && (
+                    <img
+                      src={it.img}
+                      alt={it.title || "خدمة"}
+                      loading="lazy"
+                      onClick={() => it.img && setOpenedImage(it.img)}
+                      style={{ cursor: "pointer" }}
+                    />
+                  )}
+                  <h3>{it.title}</h3>
+                  <p>{it.text}</p>
 
-          <div className="installation-sidebar-box">
-            <div className="installation-sidebar-title">
-              <FaFolder /> التصنيفات
+                  <NavLink to={toDetails(it, idx)} className="read-more">
+                    قراءة المزيد →
+                  </NavLink>
+                </div>
+              ))}
             </div>
-            <ul className="installation-sidebar-categories">
-              <li>
-                <a href="#">
-                  Uncategorized <span>(1)</span>
-                </a>
-              </li>
-              <li>
-                <a href="#">
-                  فني صحي <span>(106)</span>
-                </a>
-              </li>
-              <li>
-                <a href="#">
-                  تركيب أدوات صحية <span>(18)</span>
-                </a>
-              </li>
-              <li>
-                <a href="#">
-                  سخانات المياه <span>(7)</span>
-                </a>
-              </li>
-              <li>
-                <a href="#">
-                  صيانة سباكة <span>(21)</span>
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
+
+            {hasMore && (
+              <div className="load-more-bar">
+                <button
+                  className="ig-load-more"
+                  onClick={handleLoadMore}
+                  disabled={loading}
+                  aria-busy={loading}
+                >
+                  {loading ? (
+                    <>
+                      <FaSpinner className="spin" aria-hidden="true" />
+                      جاري التحميل…
+                    </>
+                  ) : (
+                    "تحميل المزيد"
+                  )}
+                </button>
+              </div>
+            )}
+          </section>
+        </main>
+
+        <SidebarWidgets />
       </div>
     </div>
   );
 };
 
-export default installation;
+export default Installation;

@@ -194,3 +194,137 @@
 .close-btn:hover {
   background: #004883;
 }
+
+/* ✅ Services Grid */
+.services {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.service-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px #00488322;
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+  border: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+}
+
+.service-card:hover {
+  box-shadow: 0 4px 24px #017de344;
+}
+
+.service-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-bottom: 1px solid #eee;
+}
+
+.service-card h3 {
+  font-size: 22px;
+  color: #222;
+  margin: 18px 16px 10px 16px;
+}
+
+.service-card p {
+  font-size: 16px;
+  color: #333;
+  margin: 0 16px 12px 16px;
+  flex: 1;
+}
+
+.service-card .read-more {
+  align-self: flex-start;
+  color: #017de3;
+  font-weight: bold;
+  text-decoration: none;
+  transition: color 0.2s;
+  cursor: pointer;
+  margin: 0 16px 18px 16px;
+}
+
+.service-card .read-more:hover {
+  color: #004883;
+  text-decoration: underline;
+}
+
+/* ✅ Section Title */
+.section-title {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.section-title .icon {
+  font-size: 28px;
+  color: #222;
+  font-family: "Marhey", sans-serif;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.section-title .icon svg {
+  color: #017de3;
+}
+
+/* ✅ Load More Button */
+.load-more-bar {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+}
+
+.ig-load-more {
+  appearance: none;
+  -webkit-appearance: none;
+  background: #fff;
+  color: #262626;
+  border: 1px solid #dbdbdb;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s ease, transform .12s ease, border-color .15s ease, opacity .15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ig-load-more:hover {
+  background: #fafafa;
+  transform: translateY(-1px);
+}
+
+.ig-load-more:active {
+  transform: translateY(0);
+}
+
+.ig-load-more:disabled {
+  opacity: .6;
+  cursor: default;
+}
+
+.ig-load-more .spin {
+  animation: igspin 1s linear infinite;
+}
+
+@keyframes igspin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ✅ Category Count Styling */
+.category-count {
+  color: #888;
+  font-size: 13px;
+  margin-right: 4px;
+  font-weight: normal;
+}

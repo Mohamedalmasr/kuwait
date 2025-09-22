@@ -1,3 +1,4 @@
+// src/pages/Contact.tsx
 import { useState } from "react";
 import "../styles/contact.css";
 
@@ -5,21 +6,24 @@ import "../styles/contact.css";
 import { db } from "../Models/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
+// ✅ util لتطبيع أرقام الدول العربية (E.164)
+import { normalizePhone } from "../utils/phone";
+
 type FormState = {
   name: string;
   phone: string;
   message: string;
-  company?: string; // honeypot
 };
 
 type FormErrors = Partial<Record<keyof FormState, string>>;
+
+const PREFERRED_ISO = "KW"; // البلد الافتراضي لتفسير الأرقام المحلية
 
 const Contact = () => {
   const [form, setForm] = useState<FormState>({
     name: "",
     phone: "",
     message: "",
-    company: "",
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -28,7 +32,9 @@ const Contact = () => {
   const [errMsg, setErrMsg] = useState("");
 
   const sanitize = (v: string) => v.replace(/\s+/g, " ").trim();
-  const normalizePhone = (v: string) => {
+
+  // بديل بسيط لو util فشل
+  const normalizePhoneBasic = (v: string) => {
     const plus = v.trim().startsWith("+");
     const digits = v.replace(/\D/g, "");
     return plus ? `+${digits}` : digits;
@@ -70,7 +76,6 @@ const Contact = () => {
     setOkMsg("");
     setErrMsg("");
 
-    // إعادة التحقق الفوري للحقل الجاري تعديله
     const err = validateField(name as keyof FormState, value);
     setErrors((prev) => ({ ...prev, [name]: err || undefined }));
   };
@@ -87,18 +92,16 @@ const Contact = () => {
     setErrMsg("");
 
 
-    
-    // honeypot
-    if (form.company && form.company.trim() !== "") {
-      setErrMsg("تم إيقاف الإرسال (اشتبهنا في سبام).");
+    if (typeof navigator !== "undefined" && "onLine" in navigator && !navigator.onLine) {
+      setErrMsg("لا يوجد اتصال بالإنترنت.");
       return;
     }
 
+    // تنظيف
     const cleaned: FormState = {
       name: sanitize(form.name),
-      phone: normalizePhone(form.phone),
+      phone: sanitize(form.phone),
       message: sanitize(form.message),
-      company: "",
     };
 
     const eAll = validateAll(cleaned);
@@ -108,18 +111,43 @@ const Contact = () => {
       return;
     }
 
+    let phoneRaw = cleaned.phone;
+    let phoneE164: string | null = null;
+    let phoneIntlDigits: string | null = null;
+    let phoneCountryIso: string | null = null;
+
+    if (phoneRaw) {
+      const n = normalizePhone(phoneRaw, { preferredIso: PREFERRED_ISO });
+      if (n.ok) {
+        phoneE164 = n.e164;             
+        phoneIntlDigits = n.intlDigits;
+        phoneCountryIso = n.country.iso2;
+      } else {
+        // fallback: النسخة البسيطة
+        const basic = normalizePhoneBasic(phoneRaw);
+        phoneE164 = basic.startsWith("+") ? basic : null;
+        phoneIntlDigits = basic.startsWith("+") ? basic.slice(1) : basic || null;
+        phoneCountryIso = null;
+      }
+    }
+
     setLoading(true);
     try {
       await addDoc(collection(db, "messages"), {
         name: cleaned.name,
-        phone: cleaned.phone,
+        phone: phoneRaw || null,
+        phoneE164: phoneE164,
+        phoneIntl: phoneIntlDigits,
+        phoneCountry: phoneCountryIso,
         message: cleaned.message,
-        read: false,                 // مهم للجرس
-        createdAt: serverTimestamp() // مهم للترتيب
+        read: false,
+        createdAt: serverTimestamp(),
+        ua: typeof navigator !== "undefined" ? navigator.userAgent : null,
+        ref: typeof window !== "undefined" ? window.location.pathname : null,
       });
 
       setOkMsg("تم إرسال رسالتك بنجاح");
-      setForm({ name: "", phone: "", message: "", company: "" });
+      setForm({ name: "", phone: "", message: "" });
       setErrors({});
     } catch (error) {
       console.error("خطأ أثناء الإرسال:", error);
@@ -176,7 +204,7 @@ const Contact = () => {
             )}
           </div>
 
-          {/* الهاتف */}
+          {/* الهاتف (اختياري) */}
           <div className={`form-field ${errors.phone ? "has-error" : ""}`}>
             <label htmlFor="phone">رقم الهاتف</label>
             <input
@@ -187,7 +215,7 @@ const Contact = () => {
               value={form.phone}
               onChange={handleChange}
               onBlur={handleBlur}
-              placeholder="رقم الهاتف"
+              placeholder="رقم الهاتف (اختياري)"
               autoComplete="tel"
               aria-invalid={!!errors.phone}
               aria-describedby={errors.phone ? "phone-error" : undefined}
@@ -224,19 +252,6 @@ const Contact = () => {
                 <div id="message-error" className="field-error">{errors.message}</div>
               </>
             )}
-          </div>
-
-          {/* Honeypot */}
-          <div style={{ position: "absolute", left: "-9999px", width: 0, height: 0, overflow: "hidden" }}>
-            <label htmlFor="company">Company</label>
-            <input
-              id="company"
-              name="company"
-              value={form.company}
-              onChange={handleChange}
-              tabIndex={-1}
-              autoComplete="off"
-            />
           </div>
 
           <button type="submit" className="send-btn" disabled={loading}>

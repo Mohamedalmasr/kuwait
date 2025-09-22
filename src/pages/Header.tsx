@@ -1,9 +1,9 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { FaWhatsapp, FaArrowUp } from "react-icons/fa";
-import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
 import "../styles/Header.css";
+
+import SearchGlobal from "./SearchGlobal"; // ← الكومبوننت الجديد
 
 const Header = () => {
   const today = new Date();
@@ -20,7 +20,7 @@ const Header = () => {
   useEffect(() => {
     const handleScroll = () => setShowScroll(window.scrollY > 200);
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll(); // أول مرة
+    handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -50,17 +50,15 @@ const Header = () => {
         <NavLink to="/services/installation">تركيب أدوات صحية</NavLink>
       </nav>
 
-      <div className="search-box">
-        <input type="text" placeholder="ابحث هنا..." />
-        <button><FontAwesomeIcon icon={faSearch} /></button>
-      </div>
+      {/* ✅ البحث المنفصل – هيظهر تحت المنيو في كل الصفحات */}
+      <SearchGlobal />
 
       {/* واتساب */}
       <a href="https://wa.me/01158936998" className="whatsapp" title="تواصل عبر واتساب">
         <FaWhatsapp />
       </a>
 
-      {/* زر الصعود لأعلى (مع Fade) */}
+      {/* زر الصعود لأعلى */}
       <button
         className={`scroll-top ${showScroll ? "show" : ""}`}
         onClick={scrollTop}
