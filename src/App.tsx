@@ -11,7 +11,9 @@ import Maintenance from "./pages/maintenance";
 import Drainage from "./pages/drainage";
 import Installation from "./pages/installation";
 import Contact from "./pages/Contact";
+import ServicesIndex from "./pages/ServicesIndex";
 import ServiceDetails from "./pages/ServiceDetails";
+import SearchResults from "./pages/SearchResults";
 import NotFound from "./pages/NotFound";
 
 //admin pages
@@ -48,6 +50,11 @@ const router = createBrowserRouter([
         element: <Home />,
       },
       {
+        path: "/services",
+        element: <ServicesIndex />,
+      },
+
+      {
         path: "/services/satellite",
         element: <Satellite />,
       },
@@ -80,6 +87,11 @@ const router = createBrowserRouter([
         element: <Contact />,
       },
       {
+        path: "/search",
+        element: <SearchResults />,
+      },
+
+      {
         path: "*",
         element: <NotFound />,
       },
@@ -94,7 +106,7 @@ const router = createBrowserRouter([
     children: [
       { path: "dashboard", element: <AdminDashboard /> },
       { path: "messages", element: <MessagesPage /> },
-      { path: "/admin/messages/:id", element: <MessageDetail /> },
+      { path: "messages/:id", element: <MessageDetail /> },
       { path: "settings", element: <SettingsPage /> },
     ],
   },
@@ -106,3 +118,8 @@ function App() {
 }
 
 export default App;
+
+
+
+
+

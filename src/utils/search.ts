@@ -1,34 +1,26 @@
-// src/utils/search.ts
-import { ServiceItem } from "../data";
+﻿// src/utils/search.ts
+import { ServiceItem } from "../data/services";
 
-// تحويل الأرقام العربية إلى لاتينية
 function toLatinDigits(s: string) {
   const map: Record<string, string> = {
-    "٠":"0","١":"1","٢":"2","٣":"3","٤":"4",
-    "٥":"5","٦":"6","٧":"7","٨":"8","٩":"9",
+    "ظ ":"0","ظ،":"1","ظ¢":"2","ظ£":"3","ظ¤":"4",
+    "ظ¥":"5","ظ¦":"6","ظ§":"7","ظ¨":"8","ظ©":"9",
   };
-  return s.replace(/[٠-٩]/g, (d) => map[d] ?? d);
+  return s.replace(/[ظ -ظ©]/g, (d) => map[d] ?? d);
 }
 
-// تطبيع عربي بسيط (إزالة التشكيل/التمطيط وتوحيد بعض الحروف)
 export function normalizeArabic(s: string): string {
   if (!s) return "";
   let out = s.toLowerCase();
   out = toLatinDigits(out);
   out = out
-    // إزالة التشكيل
     .replace(/[\u0610-\u061A\u064B-\u065F\u06D6-\u06ED]/g, "")
-    // إزالة التطويل
     .replace(/\u0640/g, "")
-    // توحيد الألف
-    .replace(/[إأٱآا]/g, "ا")
-    // توحيد الياء/الألف المقصورة والهمزات
-    .replace(/ى/g, "ي")
-    .replace(/ؤ/g, "و")
-    .replace(/ئ/g, "ي")
-    // تاء مربوطة -> ه (بحث أوسع)
-    .replace(/ة/g, "ه")
-    // حذف رموز غير حروف/أرقام/مسافات
+    .replace(/[ط¥ط£ظ±ط¢ط§]/g, "ط§")
+    .replace(/ظ‰/g, "ظٹ")
+    .replace(/ط¤/g, "ظˆ")
+    .replace(/ط¦/g, "ظٹ")
+    .replace(/ط©/g, "ظ‡")
     .replace(/[^\w\s\u0600-\u06FF]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -39,7 +31,6 @@ function tokens(q: string): string[] {
   return normalizeArabic(q).split(/\s+/).filter(Boolean);
 }
 
-// حساب درجة تطابق بسيطة
 function scoreItem(item: ServiceItem, q: string): number {
   const qNorm = normalizeArabic(q);
   if (!qNorm) return 0;
@@ -53,12 +44,10 @@ function scoreItem(item: ServiceItem, q: string): number {
 
   let s = 0;
 
-  // مطابقة العبارة كاملة
   if (titleN.includes(qNorm)) s += 60;
   if (slugN.includes(qNorm))  s += 40;
   if (textN.includes(qNorm))  s += 20;
 
-  // مطابقة حسب الكلمات
   for (const t of toks) {
     if (titleN.includes(t)) s += 30;
     if (slugN.includes(t))  s += 15;
@@ -77,3 +66,4 @@ export function searchServices(items: ServiceItem[], query: string, limit?: numb
   const arr = list.map((x) => x.it);
   return typeof limit === "number" ? arr.slice(0, limit) : arr;
 }
+

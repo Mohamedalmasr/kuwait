@@ -1,3 +1,4 @@
+﻿// src/pages/Installation.tsx
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { FaTimes, FaTools, FaSpinner } from "react-icons/fa";
@@ -5,7 +6,7 @@ import { FaTimes, FaTools, FaSpinner } from "react-icons/fa";
 import "../styles/Home.css";
 import "../styles/installation.css";
 
-import { servicesInstallation } from "../data";
+import { servicesInstallation } from "../data/services";
 import { generateServiceUrl } from "../utils/urls";
 import { slugify } from "../utils/slug";
 import SidebarWidgets from "./SidebarWidgets";
@@ -22,6 +23,14 @@ type ServiceItem = {
 
 const PAGE_SIZE = 12;
 
+const BREADCRUMB = "الرئيسية / تركيب أدوات صحية";
+const PAGE_TITLE = "تركيب أدوات صحية";
+const SECTION_TITLE = "خدمات تركيب الأدوات الصحية";
+const READ_MORE = "اقرأ التفاصيل الآن";
+const LOAD_MORE = "عرض المزيد من الخدمات";
+const LOADING = "جارٍ التحميل...";
+const IMAGE_ALT = "صورة الخدمة";
+
 const Installation = () => {
   const [openedImage, setOpenedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -34,7 +43,7 @@ const Installation = () => {
   const hasMore = visibleCount < items.length;
 
   const toDetails = (item: ServiceItem, idx: number) => {
-    const generatedSlug = item.slug || item.urlSlug || slugify(item.title, "preserve-arabic");
+    const generatedSlug = item.urlSlug || item.slug || slugify(item.title, "preserve-arabic");
 
     return generateServiceUrl({
       id: item.id ?? idx,
@@ -56,11 +65,10 @@ const Installation = () => {
 
   return (
     <div className="rtl" dir="rtl">
-      {/* ✅ نافذة الصورة المكبرة */}
       {openedImage && (
         <div className="image-modal" onClick={closeImage}>
           <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
-            <img src={openedImage} alt="صورة مكبرة" />
+            <img src={openedImage} alt={IMAGE_ALT} />
             <button className="close-btn" onClick={closeImage} aria-label="Close">
               <FaTimes />
             </button>
@@ -68,10 +76,9 @@ const Installation = () => {
         </div>
       )}
 
-      {/* ✅ Page Header */}
       <section className="page-header">
-        <div className="breadcrumb">الرئيسية / فني تركيب أدوات صحية</div>
-        <h1>فني تركيب أدوات صحية</h1>
+        <div className="breadcrumb">{BREADCRUMB}</div>
+        <h1>{PAGE_TITLE}</h1>
       </section>
 
       <div className="content-wrapper">
@@ -79,7 +86,7 @@ const Installation = () => {
           <section id="servicesInstallation" className="services-section">
             <h2 className="section-title">
               <span className="icon">
-                فني تركيب أدوات صحية <FaTools />
+                {SECTION_TITLE} <FaTools />
               </span>
             </h2>
 
@@ -89,7 +96,7 @@ const Installation = () => {
                   {it.img && (
                     <img
                       src={it.img}
-                      alt={it.title || "خدمة"}
+                      alt={it.title || IMAGE_ALT}
                       loading="lazy"
                       onClick={() => it.img && setOpenedImage(it.img)}
                       style={{ cursor: "pointer" }}
@@ -99,7 +106,7 @@ const Installation = () => {
                   <p>{it.text}</p>
 
                   <NavLink to={toDetails(it, idx)} className="read-more">
-                    قراءة المزيد →
+                    {READ_MORE}
                   </NavLink>
                 </div>
               ))}
@@ -116,10 +123,10 @@ const Installation = () => {
                   {loading ? (
                     <>
                       <FaSpinner className="spin" aria-hidden="true" />
-                      جاري التحميل…
+                      {LOADING}
                     </>
                   ) : (
-                    "تحميل المزيد"
+                    LOAD_MORE
                   )}
                 </button>
               </div>

@@ -1,3 +1,4 @@
+﻿// src/pages/Plumber.tsx
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { FaTimes, FaTools, FaSpinner } from "react-icons/fa";
@@ -5,7 +6,7 @@ import { FaTimes, FaTools, FaSpinner } from "react-icons/fa";
 import "../styles/Home.css";
 import "../styles/plumber.css";
 
-import { servicesPlumber } from "../data";
+import { servicesPlumber } from "../data/services";
 import { generateServiceUrl } from "../utils/urls";
 import { slugify } from "../utils/slug";
 import SidebarWidgets from "./SidebarWidgets";
@@ -22,6 +23,14 @@ type ServiceItem = {
 
 const PAGE_SIZE = 12;
 
+const BREADCRUMB = "الرئيسية / فني صحي متخصص";
+const PAGE_TITLE = "فني صحي متخصص";
+const SECTION_TITLE = "خدمات الفني الصحي المتخصص";
+const READ_MORE = "اقرأ التفاصيل الآن";
+const LOAD_MORE = "عرض المزيد من الخدمات";
+const LOADING = "جارٍ التحميل...";
+const IMAGE_ALT = "صورة الخدمة";
+
 const Plumber = () => {
   const [openedImage, setOpenedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -34,7 +43,7 @@ const Plumber = () => {
   const hasMore = visibleCount < items.length;
 
   const toDetails = (item: ServiceItem, idx: number) => {
-    const generatedSlug = item.slug || item.urlSlug || slugify(item.title, "preserve-arabic");
+    const generatedSlug = item.urlSlug || item.slug || slugify(item.title, "preserve-arabic");
 
     return generateServiceUrl({
       id: item.id ?? idx,
@@ -56,11 +65,10 @@ const Plumber = () => {
 
   return (
     <div className="rtl" dir="rtl">
-      {/* ✅ نافذة الصورة المكبرة */}
       {openedImage && (
         <div className="image-modal" onClick={closeImage}>
           <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
-            <img src={openedImage} alt="صورة مكبرة" />
+            <img src={openedImage} alt={IMAGE_ALT} />
             <button className="close-btn" onClick={closeImage} aria-label="Close">
               <FaTimes />
             </button>
@@ -68,19 +76,17 @@ const Plumber = () => {
         </div>
       )}
 
-      {/* ✅ Page Header */}
       <section className="page-header">
-        <div className="breadcrumb">الرئيسية / سباك الكويت</div>
-        <h1>سباك الكويت</h1>
+        <div className="breadcrumb">{BREADCRUMB}</div>
+        <h1>{PAGE_TITLE}</h1>
       </section>
 
       <div className="content-wrapper">
-        {/* ✅ شبكة الكروت بنفس ستايل Home */}
         <main className="page-main">
           <section id="servicesPlumber" className="services-section">
             <h2 className="section-title">
               <span className="icon">
-                سباك الكويت <FaTools />
+                {SECTION_TITLE} <FaTools />
               </span>
             </h2>
 
@@ -90,7 +96,7 @@ const Plumber = () => {
                   {it.img && (
                     <img
                       src={it.img}
-                      alt={it.title || "خدمة"}
+                      alt={it.title || IMAGE_ALT}
                       loading="lazy"
                       onClick={() => it.img && setOpenedImage(it.img)}
                       style={{ cursor: "pointer" }}
@@ -99,15 +105,13 @@ const Plumber = () => {
                   <h3>{it.title}</h3>
                   <p>{it.text}</p>
 
-                  {/* ✅ "قراءة المزيد →" تودّي للـ slug */}
                   <NavLink to={toDetails(it, idx)} className="read-more">
-                    قراءة المزيد →
+                    {READ_MORE}
                   </NavLink>
                 </div>
               ))}
             </div>
 
-            {/* ✅ زر إنستجرام: خفيف + سبينر، كل ضغطة تضيف 12 كرت */}
             {hasMore && (
               <div className="load-more-bar">
                 <button
@@ -119,10 +123,10 @@ const Plumber = () => {
                   {loading ? (
                     <>
                       <FaSpinner className="spin" aria-hidden="true" />
-                      جاري التحميل…
+                      {LOADING}
                     </>
                   ) : (
-                    "تحميل المزيد"
+                    LOAD_MORE
                   )}
                 </button>
               </div>
@@ -130,7 +134,6 @@ const Plumber = () => {
           </section>
         </main>
 
-        {/* ✅ Sidebar مع البيانات المركزية */}
         <SidebarWidgets />
       </div>
     </div>

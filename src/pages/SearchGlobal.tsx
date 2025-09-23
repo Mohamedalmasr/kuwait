@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FaTimes } from "react-icons/fa";
 
-import { ALL_SERVICES } from "../data";
+import { ALL_SERVICES } from "../data/services";
 import { searchServices, normalizeArabic } from "../utils/search";
 import { generateServiceUrl } from "../utils/urls";
 
@@ -38,13 +38,13 @@ const SearchGlobal = () => {
     if (!q) return;
     navigate(`/search?q=${encodeURIComponent(q)}`);
     setFocused(false);
-    setTerm(""); // صفّر بعد الانتقال
+    setTerm(""); // طµظپظ‘ط± ط¨ط¹ط¯ ط§ظ„ط§ظ†طھظ‚ط§ظ„
   };
 
   const goToSuggestion = (slug: string) => {
     navigate(generateServiceUrl({ id: slug, title: "", slug, urlSlug: slug }));
     setFocused(false);
-    setTerm(""); // صفّر بعد اختيار اقتراح
+    setTerm(""); // طµظپظ‘ط± ط¨ط¹ط¯ ط§ط®طھظٹط§ط± ط§ظ‚طھط±ط§ط­
   };
 
   return (
@@ -55,7 +55,7 @@ const SearchGlobal = () => {
             ref={inputRef}
             type="search"
             className="sg-input"
-            placeholder="ابحث هنا..."
+            placeholder="ابحث عن خدمة..."
             value={term}
             onChange={(e) => setTerm(e.target.value)}
             onFocus={() => setFocused(true)}
@@ -68,19 +68,19 @@ const SearchGlobal = () => {
             <button
               type="button"
               className="sg-clear"
-              aria-label="مسح"
+              aria-label="بحث"
               onMouseDown={(e) => {
                 e.preventDefault();
                 clear();
               }}
-              title="مسح النص"
+              title="بحث"
             >
               <FaTimes aria-hidden />
             </button>
           )}
         </div>
 
-        <button type="submit" className="sg-submit" aria-label="ابحث" title="ابحث">
+        <button type="submit" className="sg-submit" aria-label="بحث" title="بحث">
           <FontAwesomeIcon icon={faSearch} />
         </button>
 
@@ -92,7 +92,7 @@ const SearchGlobal = () => {
                   type="button"
                   className="sg-suggestion-btn"
                   onMouseDown={() => goToSuggestion(s.urlSlug)}
-                  aria-label={`اذهب إلى ${s.title}`}
+                  aria-label={`عرض خدمة ${term}` }
                 >
                   <span className="sg-sug-title">{s.title}</span>
                   <span className="sg-sug-hint">{s.text?.slice(0, 60) || ""}</span>
@@ -107,3 +107,7 @@ const SearchGlobal = () => {
 };
 
 export default SearchGlobal;
+
+
+
+
