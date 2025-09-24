@@ -1,3 +1,4 @@
+// src/pages/Admin/MessagesPage.tsx
 import { useEffect, useMemo, useState } from "react";
 import { FaTrash, FaEnvelopeOpen, FaEnvelope } from "react-icons/fa";
 import { Link } from "react-router-dom";
@@ -13,6 +14,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 
+import { makeTelHref } from "../../utils/phone"; // ✅ جديد
 import "./messages.css";
 
 type Message = {
@@ -24,16 +26,27 @@ type Message = {
   createdAt?: Timestamp | null;
 };
 
+const PREFERRED_ISO = "KW"; // 👈 بلدك الافتراضي للأرقام المحلية
+
 const MessagesPage = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [onlyUnread, setOnlyUnread] = useState(false);
   const [working, setWorking] = useState(false);
 
+  // ✅ إضافات حالة
+  const [loadingInitial, setLoadingInitial] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
-    const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const msgs: Message[] = snapshot.docs.map((d) => {
+    setLoadingInitial(true);
+    setError(null);
+
+    const baseRef = collection(db, "messages");
+    const qRef = query(baseRef, orderBy("createdAt", "desc"));
+
+    const handleSnapshot = (snapshot: any) => {
+      const msgs: Message[] = snapshot.docs.map((d: any) => {
         const data = d.data() as any;
         return {
           id: d.id,
@@ -44,9 +57,42 @@ const MessagesPage = () => {
           createdAt: data?.createdAt || null,
         };
       });
+      // لو fallback بدون ترتيب، رتب محليًا
+      msgs.sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
       setMessages(msgs);
+      setLoadingInitial(false);
+    };
+
+    const handleError = (err: any) => {
+      console.error("[Firestore:onSnapshot] error:", err);
+      if (err?.code === "failed-precondition") {
+        // فهرس ناقص → fallback بدون orderBy
+        console.warn("Falling back to un-ordered snapshot due to missing index.");
+        const unsub2 = onSnapshot(
+          baseRef,
+          handleSnapshot,
+          (err2) => {
+            console.error("[Fallback:onSnapshot] error:", err2);
+            setError(humanizeFirestoreError(err2));
+            setLoadingInitial(false);
+          }
+        );
+        return () => unsub2();
+      }
+      setError(humanizeFirestoreError(err));
+      setLoadingInitial(false);
+      return undefined;
+    };
+
+    const unsub1 = onSnapshot(qRef, handleSnapshot, (err) => {
+      const maybeUnsubFallback = handleError(err);
+      if (typeof maybeUnsubFallback === "function") {
+        cleanup = maybeUnsubFallback;
+      }
     });
-    return () => unsubscribe();
+
+    let cleanup = () => unsub1();
+    return () => cleanup();
   }, []);
 
   const displayed = useMemo(
@@ -71,10 +117,8 @@ const MessagesPage = () => {
     setSelected((prev) => {
       const next = new Set(prev);
       if (allVisibleSelected) {
-        // فك التحديد عن العناصر الظاهرة فقط
         displayed.forEach((m) => next.delete(m.id));
       } else {
-        // حدّد العناصر الظاهرة فقط
         displayed.forEach((m) => next.add(m.id));
       }
       return next;
@@ -84,21 +128,21 @@ const MessagesPage = () => {
   const confirmDelete = async (ids: string[]) => {
     if (ids.length === 0) return;
     const ok = window.confirm(
-      ids.length === 1
-        ? "هل تريد حذف هذه الرسالة؟"
-        : `هل تريد حذف ${ids.length} رسالة؟`
+      ids.length === 1 ? "هل تريد حذف هذه الرسالة؟" : `هل تريد حذف ${ids.length} رسالة؟`
     );
     if (!ok) return;
 
     setWorking(true);
     try {
       await Promise.all(ids.map((id) => deleteDoc(doc(db, "messages", id))));
-      // نظّف التحديد بعد الحذف
       setSelected((prev) => {
         const next = new Set(prev);
         ids.forEach((id) => next.delete(id));
         return next;
       });
+    } catch (e) {
+      console.error("Delete error:", e);
+      alert("حدث خطأ أثناء الحذف. راجع السجل Console.");
     } finally {
       setWorking(false);
     }
@@ -108,9 +152,10 @@ const MessagesPage = () => {
     if (ids.length === 0) return;
     setWorking(true);
     try {
-      await Promise.all(
-        ids.map((id) => updateDoc(doc(db, "messages", id), { read: value }))
-      );
+      await Promise.all(ids.map((id) => updateDoc(doc(db, "messages", id), { read: value })));
+    } catch (e) {
+      console.error("Update read state error:", e);
+      alert("تعذر تعديل الحالة. راجع السجل Console.");
     } finally {
       setWorking(false);
     }
@@ -119,7 +164,6 @@ const MessagesPage = () => {
   const formatDate = (ts?: Timestamp | null) => {
     if (!ts?.toDate) return "—";
     const d = ts.toDate();
-    // تنسيق بسيط عربي/24h
     return d.toLocaleString("ar-EG", {
       year: "numeric",
       month: "2-digit",
@@ -139,9 +183,7 @@ const MessagesPage = () => {
       <div className="messages-header">
         <h2>
           📩 رسائل العملاء{" "}
-          <span className="badge">
-            {messages.filter((m) => !m.read).length} غير مقروء
-          </span>
+          <span className="badge">{messages.filter((m) => !m.read).length} غير مقروء</span>
         </h2>
 
         <div className="actions">
@@ -179,6 +221,15 @@ const MessagesPage = () => {
         </div>
       </div>
 
+      {/* رسائل الحالة */}
+      {loadingInitial && <div className="empty info">... جاري تحميل الرسائل من الخادم</div>}
+      {error && (
+        <div className="empty error">
+          {error}
+          {/* لو الخطأ بسبب الفهرس، ستجد رابط الإنشاء في Console */}
+        </div>
+      )}
+
       <div className="table-wrap">
         <table className="messages-table">
           <thead>
@@ -188,9 +239,7 @@ const MessagesPage = () => {
                   <input
                     type="checkbox"
                     checked={allVisibleSelected}
-                    ref={(el) => {
-                      if (el) el.indeterminate = someVisibleSelected;
-                    }}
+                    ref={(el) => { if (el) el.indeterminate = someVisibleSelected; }}
                     onChange={toggleSelectAllVisible}
                   />
                 </label>
@@ -204,11 +253,9 @@ const MessagesPage = () => {
             </tr>
           </thead>
           <tbody>
-            {displayed.length === 0 ? (
+            {!loadingInitial && displayed.length === 0 ? (
               <tr>
-                <td colSpan={7} className="empty">
-                  لا توجد رسائل مطابقة
-                </td>
+                <td colSpan={7} className="empty">لا توجد رسائل مطابقة</td>
               </tr>
             ) : (
               displayed.map((msg) => (
@@ -222,9 +269,9 @@ const MessagesPage = () => {
                   </td>
                   <td>{msg.name}</td>
                   <td>
-                    <a href={`tel:${msg.phone.replace(/\s+/g, "")}`}>
-                      {msg.phone}
-                    </a>
+                    {msg.phone && msg.phone !== "غير متوفر" ? (
+                      <a href={makeTelHref(msg.phone, PREFERRED_ISO)}>{msg.phone}</a>
+                    ) : ("—")}
                   </td>
                   <td className="msg-text">{msg.message}</td>
                   <td>{formatDate(msg.createdAt)}</td>
@@ -236,11 +283,7 @@ const MessagesPage = () => {
                     )}
                   </td>
                   <td className="col-actions">
-                    <Link
-                      to={`/admin/messages/${msg.id}`}
-                      className="icon-btn"
-                      title="عرض التفاصيل"
-                    >
+                    <Link to={`/admin/messages/${msg.id}`} className="icon-btn" title="عرض التفاصيل">
                       👁️ عرض
                     </Link>
 
@@ -285,3 +328,17 @@ const MessagesPage = () => {
 };
 
 export default MessagesPage;
+
+function humanizeFirestoreError(err: any): string {
+  const code = err?.code || "";
+  if (code === "permission-denied") {
+    return "لا تملك صلاحية لقراءة مجموعة الرسائل. تأكد من قواعد Firestore وتسجيل الدخول.";
+  }
+  if (code === "failed-precondition") {
+    return "هذا الاستعلام يحتاج فهرس (Index). افتح Console وستجد رابطًا لإنشائه.";
+  }
+  if (code === "unavailable") {
+    return "الخدمة غير متاحة مؤقتًا. حاول لاحقًا.";
+  }
+  return err?.message || "حدث خطأ غير متوقع أثناء جلب الرسائل.";
+}

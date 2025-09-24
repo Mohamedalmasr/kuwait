@@ -1,7 +1,16 @@
-// src/pages/Home.tsx
-import { useRef, useState } from "react";
-import { FaTimes, FaTools, FaWater } from "react-icons/fa";
-import { Wrench } from "lucide-react";
+﻿import { useRef, useState } from "react";
+import type { IconType } from "react-icons";
+import SidebarWidgets from "./SidebarWidgets";
+
+import {
+  FaTimes,
+  FaTools,
+  FaWater,
+  FaWrench,
+  FaToolbox,
+  FaCogs,
+  FaStar,
+} from "react-icons/fa";
 import { NavLink } from "react-router-dom";
 
 import {
@@ -10,11 +19,9 @@ import {
   servicesDrainage,
   servicesMaintenance,
   servicesInstallation,
-} from "../data";
+} from "../data/services";
 
 import videos from "../data/videos";
-import cardsHome from "../data/CardHome";
-
 import { generateServiceUrl } from "../utils/urls";
 import "../styles/Home.css";
 
@@ -35,82 +42,62 @@ type VideoItem = {
   fullText: string;
 };
 
+type QuickLink = {
+  id: string;
+  icon: IconType;
+  title: string;
+  hint: string;
+  scrollTop?: boolean;
+};
+
+const QUICK_LINKS: QuickLink[] = [
+  { id: "servicesPlumbing", icon: FaTools, title: "خدمات السباكة", hint: "حلول متكاملة للمنازل" },
+  { id: "servicesPlumber", icon: FaWrench, title: "فني صحي متخصص", hint: "استجابة فورية للأعطال" },
+  { id: "servicesDrainage", icon: FaWater, title: "تنظيف المجاري", hint: "معدات حديثة وآمنة" },
+  { id: "servicesMaintenance", icon: FaToolbox, title: "صيانة عامة", hint: "زيارات دورية وجدولة مرنة" },
+  { id: "servicesInstallation", icon: FaCogs, title: "التركيبات الصحية", hint: "تنفيذ كامل للمشاريع" },
+  { id: "top", icon: FaStar, title: "العودة للأعلى", hint: "رجوع إلى بداية الصفحة", scrollTop: true },
+];
+
+const INITIAL_CONTENT = {
+  video: "videos/main-video.mp4",
+  title: "نصائح لاختيار الفني الصحي المناسب",
+  shortText:
+    "قبل طلب أي خدمة صحية في المنزل، تأكد من خبرة الفريق، واعرف خطوات العمل، وتكلفة الصيانة المتوقعة. في هذا المقطع نستعرض أهم النقاط التي يجب مراجعتها سريعاً.",
+  fullText:
+    "يُنصح دائماً بالتواصل مع فريق متخصص يقدم ضماناً على العمل، ويستخدم قطع غيار أصلية، ويشاركك خطة التنفيذ قبل البدء. كما ينبغي توثيق تفاصيل الزيارة والتأكد من تفعيل خدمة المتابعة بعد الإنجاز لضمان استمرارية الأداء الممتاز.",
+};
+
+const READ_MORE_LABEL = "عرض التفاصيل";
+const HIDE_DETAILS_LABEL = "إخفاء التفاصيل";
+const CARD_LINK_LABEL = "تفاصيل الخدمة";
+const LOAD_MORE_SERVICES_LABEL = "عرض جميع الخدمات";
+const IMAGE_ALT = "صورة الخدمة";
+
+const categoryPaths = {
+  plumbing: "/services/plumbing",
+  plumber: "/services/plumber",
+  drainage: "/services/drainage",
+  maintenance: "/services/maintenance",
+  installation: "/services/installation",
+};
+
 const Home = () => {
-  // ====== PLUMBING ======
-  const [visibleCountPlumbing, setVisibleCountPlumbing] = useState(5);
-  const visiblePlumbing = (servicesPlumbing as ServiceItem[]).slice(
-    0,
-    visibleCountPlumbing
-  );
-  const showMorePlumbing = () =>
-    setVisibleCountPlumbing((c) => Math.min(c + 5, servicesPlumbing.length));
-  const showLessPlumbing = () =>
-    setVisibleCountPlumbing((c) => Math.max(c - 5, 5));
+  const [visibleCountPlumbing] = useState(3);
+  const [visibleCountPlumber] = useState(3);
+  const [visibleCountDrainage] = useState(3);
+  const [visibleCountMaintenance] = useState(3);
+  const [visibleCountInstallation] = useState(3);
 
-  // ====== PLUMBER ======
-  const [visibleCountPlumber, setVisibleCountPlumber] = useState(5);
-  const visiblePlumber = (servicesPlumber as ServiceItem[]).slice(
-    0,
-    visibleCountPlumber
-  );
-  const showMorePlumber = () =>
-    setVisibleCountPlumber((c) => Math.min(c + 5, servicesPlumber.length));
-  const showLessPlumber = () =>
-    setVisibleCountPlumber((c) => Math.max(c - 5, 5));
+  const visiblePlumbing = (servicesPlumbing as ServiceItem[]).slice(0, visibleCountPlumbing);
+  const visiblePlumber = (servicesPlumber as ServiceItem[]).slice(0, visibleCountPlumber);
+  const visibleDrainage = (servicesDrainage as ServiceItem[]).slice(0, visibleCountDrainage);
+  const visibleMaintenance = (servicesMaintenance as ServiceItem[]).slice(0, visibleCountMaintenance);
+  const visibleInstallation = (servicesInstallation as ServiceItem[]).slice(0, visibleCountInstallation);
 
-  // ====== DRAINAGE ======
-  const [visibleCountDrainage, setVisibleCountDrainage] = useState(5);
-  const visibleDrainage = (servicesDrainage as ServiceItem[]).slice(
-    0,
-    visibleCountDrainage
-  );
-  const showMoreDrainage = () =>
-    setVisibleCountDrainage((c) => Math.min(c + 5, servicesDrainage.length));
-  const showLessDrainage = () =>
-    setVisibleCountDrainage((c) => Math.max(c - 5, 5));
-
-  // ====== MAINTENANCE ======
-  const [visibleCountMaintenance, setVisibleCountMaintenance] = useState(5);
-  const visibleMaintenance = (servicesMaintenance as ServiceItem[]).slice(
-    0,
-    visibleCountMaintenance
-  );
-  const showMoreMaintenance = () =>
-    setVisibleCountMaintenance((c) =>
-      Math.min(c + 5, servicesMaintenance.length)
-    );
-  const showLessMaintenance = () =>
-    setVisibleCountMaintenance((c) => Math.max(c - 5, 5));
-
-  // ====== INSTALLATION ======
-  const [visibleCountInstallation, setVisibleCountInstallation] = useState(5);
-  const visibleInstallation = (servicesInstallation as ServiceItem[]).slice(
-    0,
-    visibleCountInstallation
-  );
-  const showMoreInstallation = () =>
-    setVisibleCountInstallation((c) =>
-      Math.min(c + 5, servicesInstallation.length)
-    );
-  const showLessInstallation = () =>
-    setVisibleCountInstallation((c) => Math.max(c - 5, 5));
-
-  // ====== فيديوهات ======
   const videoRef = useRef<HTMLVideoElement>(null);
   const [expandedArticles, setExpandedArticles] = useState<{ [key: number]: boolean }>({});
-  const [currentContent, setCurrentContent] = useState<{
-    video: string;
-    title: string;
-    shortText: string;
-    fullText: string;
-  }>({
-    video: "videos/main-video.mp4",
-    title: "سباك الكويت",
-    shortText:
-      "سباك الكويت يعدّ من أفضل الفنيين في هذا المجال بالكويت، فنحن نقوم باستخدام أحدث...",
-    fullText: `هنا النص الكامل الذي سيظهر عند الضغط على "أكمل القراءة".
-يمكنك وضع كل التفاصيل الإضافية هنا عن خدمات السباكة في الكويت والأسعار والمميزات وغير ذلك من المعلومات.`,
-  });
+  const [currentContent, setCurrentContent] = useState(INITIAL_CONTENT);
 
   const toggleReadMore = (index: number) => {
     setExpandedArticles((prev) => ({ ...prev, [index]: !prev[index] }));
@@ -130,79 +117,54 @@ const Home = () => {
     setExpandedArticles({});
   };
 
-  // ====== عرض الصورة في مودال ======
   const [openedImage, setOpenedImage] = useState<string | null>(null);
   const closeImage = () => setOpenedImage(null);
 
-  // helper: يبني رابط التفاصيل بثبات
   const toDetails = (item: ServiceItem, idx: number) =>
     generateServiceUrl({
-      id: item.id ?? idx,          // fallback لو مفيش id
+      id: item.id ?? idx,
       title: item.title,
       slug: item.slug,
-      urlSlug: item.urlSlug,       // الأفضل لو موجود (من data/index.ts)
-      link: item.link,             // لو هتستخدم preferCategoryLink في مكان آخر
+      urlSlug: item.urlSlug,
+      link: item.link,
     });
+
+  const goTo = (sectionId: string) => {
+    const el = document.getElementById(sectionId);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const scrollTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   return (
     <div className="home-page" dir="rtl">
-      {/* Image Modal */}
       {openedImage && (
         <div className="image-modal" onClick={closeImage}>
           <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
             <img src={openedImage} alt="صورة مكبرة" />
-            <button className="close-btn" onClick={closeImage}>
+            <button className="close-btn" onClick={closeImage} aria-label="إغلاق">
               <FaTimes />
             </button>
           </div>
         </div>
       )}
 
-      {/* الكروت من الملف */}
-      <div className="cards-wrapper">
-        <div className="slide active">
-          {cardsHome.slice(0, 3).map((card) => (
-            <div className="card" key={card.id}>
-              <img
-                src={card.img}
-                alt={card.alt}
-                onClick={() => setOpenedImage(card.img)}
-                style={{ cursor: "pointer" }}
-              />
-              <div className="card-text">{card.title}</div>
-              <p>{card.text}</p>
-              {/* دي روابط ثابتة حسب بيانات الكروت */}
-              <NavLink to={card.link} className="read-more">
-                قراءة المزيد →
-              </NavLink>
-            </div>
-          ))}
-        </div>
-      </div>
+      <section className="section-links-grid" aria-label="التنقل السريع بين أقسام الخدمات">
+        {QUICK_LINKS.map(({ id, icon: Icon, title, hint, scrollTop: shouldScrollTop }) => (
+          <button
+            key={id}
+            className="section-card"
+            onClick={() => (shouldScrollTop ? scrollTop() : goTo(id))}
+          >
+            <span className="icon">
+              <Icon size={32} />
+            </span>
+            <span className="title">{title}</span>
+            <span className="hint">{hint}</span>
+          </button>
+        ))}
+      </section>
 
-      <div className="cards-wrapper">
-        <div className="slide active">
-          {cardsHome.slice(3, 6).map((card) => (
-            <div className="card" key={card.id}>
-              <img
-                src={card.img}
-                alt={card.alt}
-                onClick={() => setOpenedImage(card.img)}
-                style={{ cursor: "pointer" }}
-              />
-              <div className="card-text">
-                <h3>{card.title}</h3>
-                <p>{card.text}</p>
-                <NavLink to={card.link} className="read-more">
-                  قراءة المزيد →
-                </NavLink>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* مقالات الفيديو */}
       <section className="articles-grid">
         <div className="main-article">
           <video ref={videoRef} width="100%" controls>
@@ -221,16 +183,13 @@ const Home = () => {
                 </>
               )}
             </p>
-            <a
-              href="#"
+            <button
               className="read-more green"
-              onClick={(e) => {
-                e.preventDefault();
-                toggleReadMore(0);
-              }}
+              onClick={() => toggleReadMore(0)}
+              aria-expanded={!!expandedArticles[0]}
             >
-              {expandedArticles[0] ? "قراءة الأقل «" : "أكمل القراءة »"}
-            </a>
+              {expandedArticles[0] ? HIDE_DETAILS_LABEL : READ_MORE_LABEL}
+            </button>
           </div>
           <span className="badge green">{currentContent.title}</span>
         </div>
@@ -238,256 +197,208 @@ const Home = () => {
         <div className="side-articles">
           {videos.map((article, index) => (
             <div className="mini-article" key={index}>
-              <div className="video-link" onClick={() => changeContent(article)}>
+              <button
+                className="video-link"
+                onClick={() => changeContent(article)}
+                aria-label={`تشغيل الفيديو ${article.title}`}
+              >
                 <h3>{article.title}</h3>
-              </div>
+              </button>
             </div>
           ))}
         </div>
       </section>
 
-      {/* الخدمات من data/services */}
       <main>
-        {/* ====== خدمات فني صحي ====== */}
         <section id="servicesPlumbing" className="services-section">
           <h2 className="section-title">
             <span className="icon">
-              خدمات فني صحي <FaTools />
+              خدمات السباكة <FaTools />
             </span>
           </h2>
 
           <div className="services">
             {visiblePlumbing.map((item, idx) => (
-              <div className="service-card" key={item.urlSlug ?? item.slug ?? idx}>
+              <div className="service-card" key={item.id ?? item.urlSlug ?? item.slug ?? idx}>
                 {item.img && (
                   <img
                     src={item.img}
-                    alt={item.title || "خدمة"}
+                    alt={item.title || IMAGE_ALT}
+                    loading="lazy"
                     onClick={() => setOpenedImage(item.img!)}
+                    style={{ cursor: "pointer" }}
                   />
                 )}
                 <h3>{item.title}</h3>
                 <p>{item.text}</p>
 
                 <NavLink to={toDetails(item, idx)} className="read-more">
-                  قراءة المزيد →
+                  {CARD_LINK_LABEL}
                 </NavLink>
               </div>
             ))}
           </div>
 
           <div className="load-more-bar">
-            {visibleCountPlumbing < servicesPlumbing.length && (
-              <button className="load-more" onClick={showMorePlumbing}>
-                عرض المزيد
-              </button>
-            )}
-            {visibleCountPlumbing > 5 && (
-              <button className="load-more less" onClick={showLessPlumbing}>
-                عرض أقل
-              </button>
-            )}
+            <NavLink className="load-more" to={categoryPaths.plumbing}>
+              {LOAD_MORE_SERVICES_LABEL}
+            </NavLink>
           </div>
-
-          {visibleCountPlumbing >= servicesPlumbing.length &&
-            servicesPlumbing.length > 0 && (
-              <div className="all-shown-note">تم عرض جميع الشركات</div>
-            )}
         </section>
 
-        {/* ====== سباك الكويت ====== */}
         <section id="servicesPlumber" className="services-section">
           <h2 className="section-title">
             <span className="icon">
-              سباك الكويت <Wrench />
+              الفني الصحي <FaWrench />
             </span>
           </h2>
 
           <div className="services">
             {visiblePlumber.map((item, idx) => (
-              <div className="service-card" key={item.urlSlug ?? item.slug ?? idx}>
+              <div className="service-card" key={item.id ?? item.urlSlug ?? item.slug ?? idx}>
                 {item.img && (
                   <img
                     src={item.img}
-                    alt={item.title || "خدمة"}
+                    alt={item.title || IMAGE_ALT}
+                    loading="lazy"
                     onClick={() => setOpenedImage(item.img!)}
+                    style={{ cursor: "pointer" }}
                   />
                 )}
                 <h3>{item.title}</h3>
                 <p>{item.text}</p>
 
                 <NavLink to={toDetails(item, idx)} className="read-more">
-                  قراءة المزيد →
+                  {CARD_LINK_LABEL}
                 </NavLink>
               </div>
             ))}
           </div>
 
           <div className="load-more-bar">
-            {visibleCountPlumber < servicesPlumber.length && (
-              <button className="load-more" onClick={showMorePlumber}>
-                عرض المزيد
-              </button>
-            )}
-            {visibleCountPlumber > 5 && (
-              <button className="load-more less" onClick={showLessPlumber}>
-                عرض أقل
-              </button>
-            )}
+            <NavLink className="load-more" to={categoryPaths.plumber}>
+              {LOAD_MORE_SERVICES_LABEL}
+            </NavLink>
           </div>
-
-          {visibleCountPlumber >= servicesPlumber.length &&
-            servicesPlumber.length > 0 && (
-              <div className="all-shown-note">تم عرض جميع الشركات</div>
-            )}
         </section>
 
-        {/* ====== تسليك المجاري ====== */}
         <section id="servicesDrainage" className="services-section">
           <h2 className="section-title">
             <span className="icon">
-              تسليك المجاري <FaWater />
+              تنظيف المجاري <FaWater />
             </span>
           </h2>
 
           <div className="services">
             {visibleDrainage.map((item, idx) => (
-              <div className="service-card" key={item.urlSlug ?? item.slug ?? idx}>
+              <div className="service-card" key={item.id ?? item.urlSlug ?? item.slug ?? idx}>
                 {item.img && (
                   <img
                     src={item.img}
-                    alt={item.title || "خدمة"}
+                    alt={item.title || IMAGE_ALT}
+                    loading="lazy"
                     onClick={() => setOpenedImage(item.img!)}
+                    style={{ cursor: "pointer" }}
                   />
                 )}
                 <h3>{item.title}</h3>
                 <p>{item.text}</p>
 
-                {/* ✅ كان قبلاً item.link — دلوقتي نستخدم generateServiceUrl لتفاصيل الخدمة */}
                 <NavLink to={toDetails(item, idx)} className="read-more">
-                  قراءة المزيد →
+                  {CARD_LINK_LABEL}
                 </NavLink>
               </div>
             ))}
           </div>
 
           <div className="load-more-bar">
-            {visibleCountDrainage < servicesDrainage.length && (
-              <button className="load-more" onClick={showMoreDrainage}>
-                عرض المزيد
-              </button>
-            )}
-            {visibleCountDrainage > 5 && (
-              <button className="load-more less" onClick={showLessDrainage}>
-                عرض أقل
-              </button>
-            )}
+            <NavLink className="load-more" to={categoryPaths.drainage}>
+              {LOAD_MORE_SERVICES_LABEL}
+            </NavLink>
           </div>
-
-          {visibleCountDrainage >= servicesDrainage.length &&
-            servicesDrainage.length > 0 && (
-              <div className="all-shown-note">تم عرض جميع الشركات</div>
-            )}
         </section>
 
-        {/* ====== صيانة منزلية ====== */}
         <section id="servicesMaintenance" className="services-section">
           <h2 className="section-title">
             <span className="icon">
-              صيانة منزلية <FaTools />
+              الصيانة العامة <FaToolbox />
             </span>
           </h2>
 
           <div className="services">
             {visibleMaintenance.map((item, idx) => (
-              <div className="service-card" key={item.urlSlug ?? item.slug ?? idx}>
+              <div className="service-card" key={item.id ?? item.urlSlug ?? item.slug ?? idx}>
                 {item.img && (
                   <img
                     src={item.img}
-                    alt={item.title || "خدمة"}
+                    alt={item.title || IMAGE_ALT}
+                    loading="lazy"
                     onClick={() => setOpenedImage(item.img!)}
+                    style={{ cursor: "pointer" }}
                   />
                 )}
                 <h3>{item.title}</h3>
                 <p>{item.text}</p>
 
-                {/* كان item.link — دلوقتي تفاصيل */}
                 <NavLink to={toDetails(item, idx)} className="read-more">
-                  قراءة المزيد →
+                  {CARD_LINK_LABEL}
                 </NavLink>
               </div>
             ))}
           </div>
 
           <div className="load-more-bar">
-            {visibleCountMaintenance < servicesMaintenance.length && (
-              <button className="load-more" onClick={showMoreMaintenance}>
-                عرض المزيد
-              </button>
-            )}
-            {visibleCountMaintenance > 5 && (
-              <button className="load-more less" onClick={showLessMaintenance}>
-                عرض أقل
-              </button>
-            )}
+            <NavLink className="load-more" to={categoryPaths.maintenance}>
+              {LOAD_MORE_SERVICES_LABEL}
+            </NavLink>
           </div>
-
-          {visibleCountMaintenance >= servicesMaintenance.length &&
-            servicesMaintenance.length > 0 && (
-              <div className="all-shown-note">تم عرض جميع الشركات</div>
-            )}
         </section>
 
-        {/* ====== تركيب أدوات صحية ====== */}
         <section id="servicesInstallation" className="services-section">
           <h2 className="section-title">
             <span className="icon">
-              تركيب ادوات صحية <FaTools />
+              التركيبات الصحية <FaCogs />
             </span>
           </h2>
 
           <div className="services">
             {visibleInstallation.map((item, idx) => (
-              <div className="service-card" key={item.urlSlug ?? item.slug ?? idx}>
+              <div className="service-card" key={item.id ?? item.urlSlug ?? item.slug ?? idx}>
                 {item.img && (
                   <img
                     src={item.img}
-                    alt={item.title || "خدمة"}
+                    alt={item.title || IMAGE_ALT}
+                    loading="lazy"
                     onClick={() => setOpenedImage(item.img!)}
+                    style={{ cursor: "pointer" }}
                   />
                 )}
                 <h3>{item.title}</h3>
                 <p>{item.text}</p>
 
-                {/* كان item.link — دلوقتي تفاصيل */}
                 <NavLink to={toDetails(item, idx)} className="read-more">
-                  قراءة المزيد →
+                  {CARD_LINK_LABEL}
                 </NavLink>
               </div>
             ))}
           </div>
 
           <div className="load-more-bar">
-            {visibleCountInstallation < servicesInstallation.length && (
-              <button className="load-more" onClick={showMoreInstallation}>
-                عرض المزيد
-              </button>
-            )}
-            {visibleCountInstallation > 5 && (
-              <button className="load-more less" onClick={showLessInstallation}>
-                عرض أقل
-              </button>
-            )}
+            <NavLink className="load-more" to={categoryPaths.installation}>
+              {LOAD_MORE_SERVICES_LABEL}
+            </NavLink>
           </div>
-
-          {visibleCountInstallation >= servicesInstallation.length &&
-            servicesInstallation.length > 0 && (
-              <div className="all-shown-note">تم عرض جميع الشركات</div>
-            )}
         </section>
       </main>
+
+      <SidebarWidgets
+        titleLatest="أحدث الخدمات المنشورة"
+        titleCategories="تصنيفات الخدمات"
+      />
     </div>
   );
 };
 
 export default Home;
+
+

@@ -1,3 +1,4 @@
+// src/pages/Admin/AdminDashboard.tsx
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { auth, db } from "../../Models/firebase";
@@ -31,33 +32,39 @@ const AdminDashboard = () => {
   const [todayCount, setTodayCount] = useState<number | null>(null);
   const [latest, setLatest] = useState<Msg[]>([]);
 
-  // حدود اليوم (من 00:00 إلى 23:59)
   const startOfToday = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
+    const d = new Date(); d.setHours(0, 0, 0, 0);
     return Timestamp.fromDate(d);
   }, []);
   const startOfTomorrow = useMemo(() => {
-    const d = new Date();
-    d.setHours(24, 0, 0, 0);
+    const d = new Date(); d.setHours(24, 0, 0, 0);
     return Timestamp.fromDate(d);
   }, []);
 
   useEffect(() => {
     let unsubLatest: (() => void) | null = null;
+
     (async () => {
+      // إجمالي الرسائل
       try {
-        // 1) إجمالي الرسائل
         const totalSnap = await getCountFromServer(collection(db, "messages"));
         setTotalCount(totalSnap.data().count);
+      } catch {
+        setTotalCount(null);
+      }
 
-        // 2) غير المقروء
+      // غير المقروء
+      try {
         const unreadSnap = await getCountFromServer(
           query(collection(db, "messages"), where("read", "==", false))
         );
         setUnreadCount(unreadSnap.data().count);
+      } catch {
+        setUnreadCount(null);
+      }
 
-        // 3) رسائل اليوم
+      // رسائل اليوم
+      try {
         const todaySnap = await getCountFromServer(
           query(
             collection(db, "messages"),
@@ -66,37 +73,63 @@ const AdminDashboard = () => {
           )
         );
         setTodayCount(todaySnap.data().count);
+      } catch {
+        setTodayCount(null);
+      }
 
-        // 4) آخر 5 رسائل
+      // أحدث 5
+      try {
         const qLatest = query(
           collection(db, "messages"),
           orderBy("createdAt", "desc"),
           fbLimit(5)
         );
-        unsubLatest = onSnapshot(qLatest, (snap) => {
-          const list: Msg[] = snap.docs.map((d) => {
-            const data = d.data() as any;
-            return {
-              id: d.id,
-              name: data?.name || "مستخدم",
-              phone: data?.phone || "",
-              message: data?.message || "",
-              read: !!data?.read,
-              createdAt: data?.createdAt || null,
-            };
-          });
-          setLatest(list);
-          setLoading(false);
-        });
-      } catch (e) {
-        // حتى لو فشل count نعرض الصفحة بدون انهيار
+        unsubLatest = onSnapshot(
+          qLatest,
+          (snap) => {
+            const list: Msg[] = snap.docs.map((d) => {
+              const x = d.data() as any;
+              return {
+                id: d.id,
+                name: x?.name || "مستخدم",
+                phone: x?.phone || "",
+                message: x?.message || "",
+                read: !!x?.read,
+                createdAt: x?.createdAt || null,
+              };
+            });
+            setLatest(list);
+            setLoading(false);
+          },
+          () => {
+            // fallback: بدون ترتيب، رتب محليًا وخذ أول 5
+            const unsub2 = onSnapshot(collection(db, "messages"), (snap2) => {
+              const list: Msg[] = snap2.docs
+                .map((d) => {
+                  const x = d.data() as any;
+                  return {
+                    id: d.id,
+                    name: x?.name || "مستخدم",
+                    phone: x?.phone || "",
+                    message: x?.message || "",
+                    read: !!x?.read,
+                    createdAt: x?.createdAt || null,
+                  };
+                })
+                .sort((a,b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0))
+                .slice(0, 5);
+              setLatest(list);
+              setLoading(false);
+            });
+            unsubLatest = unsub2;
+          }
+        );
+      } catch {
         setLoading(false);
       }
     })();
 
-    return () => {
-      if (unsubLatest) unsubLatest();
-    };
+    return () => { if (unsubLatest) unsubLatest(); };
   }, [startOfToday, startOfTomorrow]);
 
   const formatTime = (ts?: Timestamp | null) => {
@@ -115,24 +148,16 @@ const AdminDashboard = () => {
   return (
     <div className="admin-dashboard" dir="rtl">
       <div className="admin-header">
-        <h1>
-          مرحباً {user?.displayName ? user.displayName : "بك"} 👋
-        </h1>
-        <p className="subtitle">
-          هذه نظرة عامة سريعة على آخر الرسائل ونشاط اليوم.
-        </p>
+        <h1>مرحباً {user?.displayName ? user.displayName : "بك"} 👋</h1>
+        <p className="subtitle">هذه نظرة عامة سريعة على آخر الرسائل ونشاط اليوم.</p>
       </div>
 
       {/* بطاقات الإحصائيات */}
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-title">إجمالي الرسائل</div>
-          <div className="stat-value">
-            {totalCount === null ? "…" : totalCount}
-          </div>
-          <Link to="/admin/messages" className="stat-link">
-            عرض الكل
-          </Link>
+          <div className="stat-value">{totalCount === null ? "…" : totalCount}</div>
+          <Link to="/admin/messages" className="stat-link">عرض الكل</Link>
         </div>
 
         <div className="stat-card">
@@ -140,16 +165,12 @@ const AdminDashboard = () => {
           <div className="stat-value highlight">
             {unreadCount === null ? "…" : unreadCount}
           </div>
-          <Link to="/admin/messages" className="stat-link">
-            الذهاب للرسائل
-          </Link>
+          <Link to="/admin/messages" className="stat-link">الذهاب للرسائل</Link>
         </div>
 
         <div className="stat-card">
           <div className="stat-title">رسائل اليوم</div>
-          <div className="stat-value">
-            {todayCount === null ? "…" : todayCount}
-          </div>
+          <div className="stat-value">{todayCount === null ? "…" : todayCount}</div>
           <div className="stat-hint">منذ منتصف الليل</div>
         </div>
       </div>
@@ -158,16 +179,12 @@ const AdminDashboard = () => {
       <div className="panel">
         <div className="panel-head">
           <h3>أحدث الرسائل</h3>
-          <Link to="/admin/messages" className="btn ghost">
-            عرض جميع الرسائل
-          </Link>
+          <Link to="/admin/messages" className="btn ghost">عرض جميع الرسائل</Link>
         </div>
 
         {loading ? (
           <div className="list list--loading">
-            <div className="skeleton" />
-            <div className="skeleton" />
-            <div className="skeleton" />
+            <div className="skeleton" /><div className="skeleton" /><div className="skeleton" />
           </div>
         ) : latest.length === 0 ? (
           <div className="empty">لا توجد رسائل بعد.</div>
@@ -183,9 +200,7 @@ const AdminDashboard = () => {
                   <div className="preview">{m.message || "—"}</div>
                 </div>
                 <div className="item-actions">
-                  <Link to={`/admin/messages/${m.id}`} className="btn">
-                    عرض التفاصيل
-                  </Link>
+                  <Link to={`/admin/messages/${m.id}`} className="btn">عرض التفاصيل</Link>
                 </div>
               </li>
             ))}
@@ -195,15 +210,9 @@ const AdminDashboard = () => {
 
       {/* روابط سريعة */}
       <div className="quick-grid">
-        <Link to="/admin/messages" className="quick-card">
-          📩 الذهاب للرسائل
-        </Link>
-        <Link to="/admin/settings" className="quick-card">
-          ⚙️ إعدادات الحساب
-        </Link>
-        <Link to="/admin/dashboard" className="quick-card">
-          🏠 الصفحة الرئيسية
-        </Link>
+        <Link to="/admin/messages" className="quick-card">📩 الذهاب للرسائل</Link>
+        <Link to="/admin/settings" className="quick-card">⚙️ إعدادات الحساب</Link>
+        <Link to="/admin/dashboard" className="quick-card">🏠 الصفحة الرئيسية</Link>
       </div>
     </div>
   );

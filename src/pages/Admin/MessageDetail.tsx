@@ -2,15 +2,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { db } from "../../Models/firebase";
-import {
-  doc,
-  getDoc,
-  updateDoc,
-  deleteDoc,
-  Timestamp,
-} from "firebase/firestore";
+import { doc, getDoc, updateDoc, deleteDoc, Timestamp } from "firebase/firestore";
 import { FaArrowRight, FaEnvelope, FaEnvelopeOpen, FaTrash } from "react-icons/fa";
 import "./message-detail.css";
+import { makeTelHref, makeWhatsAppHref, formatDisplay } from "../../utils/phone";
 
 type Msg = {
   id: string;
@@ -20,6 +15,8 @@ type Msg = {
   read: boolean;
   createdAt?: Timestamp | null;
 };
+
+const PREFERRED_ISO = "KW"; // 👈 عدّلها لبلدك الافتراضي إن حبيت
 
 const MessageDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,11 +28,15 @@ const MessageDetail = () => {
   const [error, setError] = useState("");
 
   const telHref = useMemo(
-    () => (msg?.phone ? `tel:${msg.phone.replace(/\s+/g, "")}` : "#"),
+    () => (msg?.phone ? makeTelHref(msg.phone, PREFERRED_ISO) : "#"),
     [msg?.phone]
   );
   const waHref = useMemo(
-    () => (msg?.phone ? `https://wa.me/${msg.phone.replace(/\D/g, "")}` : "#"),
+    () => (msg?.phone ? makeWhatsAppHref(msg.phone, PREFERRED_ISO) : "#"),
+    [msg?.phone]
+  );
+  const phoneDisplay = useMemo(
+    () => (msg?.phone ? formatDisplay(msg.phone, PREFERRED_ISO) : "—"),
     [msg?.phone]
   );
 
@@ -55,16 +56,12 @@ const MessageDetail = () => {
   // جلب الرسالة + تعليم كمقروء عند الفتح
   useEffect(() => {
     let mounted = true;
-
     (async () => {
       try {
         if (!id) throw new Error("لا يوجد معرف رسالة.");
         const ref = doc(db, "messages", id);
         const snap = await getDoc(ref);
-
-        if (!snap.exists()) {
-          throw new Error("الرسالة غير موجودة.");
-        }
+        if (!snap.exists()) throw new Error("الرسالة غير موجودة.");
 
         const data = snap.data() as any;
         const current: Msg = {
@@ -75,13 +72,15 @@ const MessageDetail = () => {
           read: !!data?.read,
           createdAt: data?.createdAt || null,
         };
-
         if (mounted) setMsg(current);
 
-        // علّمها كمقروء لو كانت غير مقروء
         if (!current.read) {
-          await updateDoc(ref, { read: true });
-          if (mounted) setMsg((m) => (m ? { ...m, read: true } : m));
+          try {
+            await updateDoc(ref, { read: true });
+            if (mounted) setMsg((m) => (m ? { ...m, read: true } : m));
+          } catch {
+            /* تجاهل لو لا يوجد صلاحية كتابة */
+          }
         }
       } catch (e: any) {
         setError(e?.message || "فشل جلب الرسالة.");
@@ -89,10 +88,7 @@ const MessageDetail = () => {
         if (mounted) setLoading(false);
       }
     })();
-
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [id]);
 
   const toggleRead = async () => {
@@ -123,9 +119,7 @@ const MessageDetail = () => {
   if (loading) {
     return (
       <div className="message-detail">
-        <div className="card">
-          جاري التحميل…
-        </div>
+        <div className="card">جاري التحميل…</div>
       </div>
     );
   }
@@ -133,13 +127,9 @@ const MessageDetail = () => {
   if (error) {
     return (
       <div className="message-detail">
-        <div className="card" style={{ color: "#b91c1c" }}>
-          حدث خطأ: {error}
-        </div>
+        <div className="card" style={{ color: "#b91c1c" }}>حدث خطأ: {error}</div>
         <div className="md-actions">
-          <Link className="btn" to="/admin/messages">
-            <FaArrowRight /> الرجوع للرسائل
-          </Link>
+          <Link className="btn" to="/admin/messages"><FaArrowRight /> الرجوع للرسائل</Link>
         </div>
       </div>
     );
@@ -150,9 +140,7 @@ const MessageDetail = () => {
       <div className="message-detail">
         <div className="card">لا توجد بيانات للرسالة.</div>
         <div className="md-actions">
-          <Link className="btn" to="/admin/messages">
-            <FaArrowRight /> الرجوع للرسائل
-          </Link>
+          <Link className="btn" to="/admin/messages"><FaArrowRight /> الرجوع للرسائل</Link>
         </div>
       </div>
     );
@@ -162,80 +150,47 @@ const MessageDetail = () => {
     <div className="message-detail">
       {/* روابط سريعة */}
       <div className="md-topbar">
-        <Link className="btn" to="/admin/dashboard">
-          <FaArrowRight /> العودة للداشبورد
-        </Link>
-        <Link className="btn" to="/admin/messages">
-          <FaArrowRight /> العودة للرسائل
-        </Link>
-        {msg.read ? (
-          <span className="badge read">مقروء</span>
-        ) : (
-          <span className="badge unread">غير مقروء</span>
-        )}
+        <Link className="btn" to="/admin/dashboard"><FaArrowRight /> العودة للداشبورد</Link>
+        <Link className="btn" to="/admin/messages"><FaArrowRight /> العودة للرسائل</Link>
+        {msg.read ? <span className="badge read">مقروء</span> : <span className="badge unread">غير مقروء</span>}
       </div>
 
-      {/* العنوان */}
       <h2 className="md-title">تفاصيل الرسالة</h2>
 
-      {/* معلومات أساسية */}
       <div className="card_message">
         <div className="card-grid">
-          <div className="card-row">
-            <strong>الاسم:</strong> {msg.name}
-          </div>
+          <div className="card-row"><strong>الاسم:</strong> {msg.name}</div>
 
           <div className="card-row">
             <strong>الهاتف:</strong>
             {msg.phone ? (
               <>
-                <a href={telHref}>{msg.phone}</a>
+                <a href={telHref}>{phoneDisplay}</a>
                 <span className="contact-links">
-                  <a href={waHref} target="_blank" rel="noreferrer">
-                    واتساب
-                  </a>
+                  <a href={waHref} target="_blank" rel="noreferrer">واتساب</a>
                 </span>
               </>
-            ) : (
-              "—"
-            )}
+            ) : ("—")}
           </div>
 
-          <div className="card-row">
-            <strong>التاريخ:</strong> {formatTime(msg.createdAt)}
-          </div>
+          <div className="card-row"><strong>التاريخ:</strong> {formatTime(msg.createdAt)}</div>
 
           <div className="card-row">
             <strong>الحالة:</strong>
-            {msg.read ? (
-              <span className="badge read">مقروء</span>
-            ) : (
-              <span className="badge unread">غير مقروء</span>
-            )}
+            {msg.read ? <span className="badge read">مقروء</span> : <span className="badge unread">غير مقروء</span>}
           </div>
         </div>
       </div>
 
-      {/* نص الرسالة */}
       <div className="card_message">
         <strong>نص الرسالة:</strong>
         <p className="msg-text">{msg.message || "—"}</p>
       </div>
 
-      {/* الإجراءات */}
       <div className="md-actions">
-        <button className="btn" onClick={toggleRead} disabled={working}>
-          {msg.read ? (
-            <>
-              <FaEnvelope /> تعليم كغير مقروء
-            </>
-          ) : (
-            <>
-              <FaEnvelopeOpen /> تعليم كمقروء
-            </>
-          )}
+        <button className="btn" onClick={toggleRead} disabled={working || loading}>
+          {msg.read ? (<><FaEnvelope /> تعليم كغير مقروء</>) : (<><FaEnvelopeOpen /> تعليم كمقروء</>)}
         </button>
-
         <button className="btn danger" onClick={handleDelete} disabled={working}>
           <FaTrash /> حذف
         </button>

@@ -1,5 +1,6 @@
 import "leaflet/dist/leaflet.css";
 import "../styles/Header.css"; // Assuming you have a CSS file for styles
+import SidebarWidgets from "./SidebarWidgets";
 
 const MainComponent = () => {
   return (
@@ -96,39 +97,7 @@ const MainComponent = () => {
           لتركيب العشب الصناعي بالضمان للفلل والقصور والمتنزهات العامة والخاصة .{" "}
         </p>
       </div>
-
-      {/* ✅ SECTION: Google Map */}
-      <div style={{ height: "400px", width: "100%", margin: "20px 0" }}>
-        <iframe
-          title="Google Map"
-          width="100%"
-          height="100%"
-          frameBorder="0"
-          style={{ border: 0 }}
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3477.338393698736!2d48.028!3d29.337!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3fcf9e4e2e2e2e2e%3A0x123456789abcdef!2z2KfZhNmF2YjYsdmK2Kkg2KfZhNmF2YjYsdmK2Kkg2KfZhNmF2YjYsdmK2Kkg2KfZhNmF2YjYsdmK2Kkg2KfZhNmF2YjYsdmK2Kkg2KfZhNmF2YjYsdmK2Kkg2KfZhNmF2YjYsdmK2Kkg2KfZhNmF2YjYsdmK2Kkg2KfZhNmF2YjYsdmK2Kkg2KfZhNmF2YjYsdmK2Kkg2KfZhNmF2YjYsdmK2Kkg2KfZhNmF2YjYsdmK2Kkg2KfZhNmF2YjYsdmK2Kkg2KfZhNmF2YjYsdmK2Kkg2KfZhNmF2YjYsdmK2Kkg2KfZhNmF2YjYsdmK2Kkg2KfZhNmF2YjYsdmK2Kkg!5e0!3m2!1sar!2skw!4v1620000000000!5m2!1sar!2skw"
-          allowFullScreen
-        ></iframe>
-      </div>
-
-      {/* ✅ SECTION: Tags */}
-      <div className="tags-container">
-        <span className="tag">#سباك صحي جمعية قرطبة</span>
-        <span className="tag">#سباك صحي جمعية قرطبة</span>
-        <span className="tag">#الفني الصحي جمعية قرطبة</span>
-        <span className="tag">#فني صحي جمعية قرطبة</span>
-        <span className="tag">#فني صحي جمعية قرطبة</span>
-        <span className="tag">#فني صحي 24 ساعه جمعية قرطبة</span>
-        <span className="tag">#فني صحي جمعية قرطبة</span>
-        <span className="tag">#فني صحي وسباك جمعية قرطبة</span>
-        <span className="tag">#فني صحية جمعية قرطبة</span>
-        <span className="tag">#معلم ادوات صحية جمعية قرطبة</span>
-        <span className="tag">#معلم ادوات صحية جمعية قرطبة</span>
-        <span className="tag">#معلم صحي باكستاني جمعية قرطبة</span>
-        <span className="tag">#معلم صحي جمعية قرطبة</span>
-        <span className="tag">#معلم صحي ممتاز جمعية قرطبة</span>
-        <span className="tag">#مهندس صحي جمعية قرطبة</span>
-        <span className="tag">#مهندس مدني صرف صحي جمعية قرطبة</span>
-      </div>
+      <SidebarWidgets />
     </div>
   );
 };

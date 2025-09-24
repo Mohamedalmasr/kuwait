@@ -1,12 +1,14 @@
-// src/pages/ServiceDetails.tsx
+﻿// src/pages/ServiceDetails.tsx
 import { useParams, Navigate, Link } from "react-router-dom";
 import { useMemo } from "react";
 import "../styles/ServiceDetails.css";
 
-import { BY_SLUG, servicesPlumbing, ServiceItem } from "../data/index";
+import { BY_SLUG, servicesPlumbing, ServiceItem } from "../data/services";
 import { toServicePath, fromServiceParam } from "../utils/slug";
-
-import { ContentSection as DataContentSection } from "../data/index";
+import SidebarWidgets from "../pages/SidebarWidgets"; // ✅ رجّعناه
+import { ContentSection as DataContentSection } from "../data/services";
+import { FiPhone, FiMail } from "react-icons/fi";
+import { FaWhatsapp } from "react-icons/fa";
 
 type ContentSection = DataContentSection & {
   text2?: string;
@@ -29,6 +31,14 @@ type DetailService = ServiceItem & {
   map?: MapInfo;
 };
 
+const DEFAULT_MAP_TITLE = "موقع الخدمة على الخريطة";
+const DEFAULT_QUESTION_HEADING = "هل لديك سؤال إضافي؟";
+const RELATED_SERVICES_TITLE = "قد يعجبك أيضًا";
+const VIEW_DETAILS_LABEL = "عرض التفاصيل";
+const SERVICE_CATEGORY_LABEL = "التصنيف";
+const SERVICE_ID_LABEL = "رقم الخدمة";
+const MAP_LINK_LABEL = "عرض الموقع في نافذة جديدة";
+
 export default function ServiceDetails() {
   const { slug: routeParam } = useParams<{ slug: string }>();
   const decodedSlug = fromServiceParam(routeParam);
@@ -41,143 +51,199 @@ export default function ServiceDetails() {
   if (!decodedSlug) return <Navigate to="/404" replace />;
   if (!service) return <Navigate to="/404" replace />;
 
-  return (
-    <div className="service-details-page">
-      <main className="service-details-container">
-        <article className="service-details-content">
-          <h1 className="service-details-title">{service.title}</h1>
+  const hasMap =
+    !!service.map && (!!service.map.embedUrl || !!service.map.link);
 
+  return (
+    <div className="sd-page">
+      <main className="sd-container">
+        {/* Breadcrumb */}
+        <nav className="sd-breadcrumb" aria-label="breadcrumb">
+          <Link to="/">الرئيسية</Link>
+          <span className="sep">/</span>
+          <span aria-current="page">{service.title}</span>
+        </nav>
+
+        <article className="sd-article">
+          {/* Hero */}
           {service.img && (
-            <div className="service-image-container">
+            <div className="sd-hero">
               <img
-                alt={service.title}
                 src={service.img}
-                className="service-details-image"
+                alt={service.title}
                 loading="lazy"
+                className="sd-hero-img"
               />
             </div>
           )}
 
-          <div className="service-details-text">
-            <div className="service-description">
-              <p>{service.text2}</p>
-              <p>{service.text3}</p>
+          <h1 className="sd-title">{service.title}</h1>
+
+          {/* Meta chips */}
+          <div className="sd-meta">
+            <span className="chip ghost">
+              {SERVICE_ID_LABEL}: <b>{service.id}</b>
+            </span>
+            <span className="chip brand">
+              {SERVICE_CATEGORY_LABEL}: <b>{service.link || "عام"}</b>
+            </span>
+          </div>
+
+          {/* Intro */}
+          {(service.text2 || service.text3) && (
+            <div className="sd-intro">
+              {service.text2 && <p>{service.text2}</p>}
+              {service.text3 && <p>{service.text3}</p>}
             </div>
+          )}
 
-            {/* أقسام المحتوى الديناميكية من JSON */}
-            {service.sections?.map((sec) => (
-              <section key={sec.id} id={sec.id} className="content-section">
-                {sec.heading && (
-                  <h2 className="section-heading">{sec.heading}</h2>
-                )}
+          {/* Sections */}
+          {service.sections?.map((sec) => (
+            <section key={sec.id} id={sec.id} className="sd-section">
+              {sec.heading && (
+                <h2 className="sd-section-title">{sec.heading}</h2>
+              )}
 
-                {sec.html ? (
-                  <div
-                    className="section-body"
-                    dangerouslySetInnerHTML={{ __html: sec.html }}
+              {sec.html ? (
+                <div
+                  className="sd-section-body"
+                  dangerouslySetInnerHTML={{ __html: sec.html }}
+                />
+              ) : (
+                <>
+                  {sec.text && <p className="sd-p">{sec.text}</p>}
+                  {sec.img && (
+                    <div className="sd-section-media">
+                      <img
+                        alt={sec.heading || "صورة مرفقة"}
+                        src={sec.img}
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+                  {sec.text3 && <p className="sd-p">{sec.text3}</p>}
+                  {sec.text4 && <p className="sd-p">{sec.text4}</p>}
+                  {sec.bullets && sec.bullets.length > 0 && (
+                    <ul className="sd-ul">
+                      {sec.bullets.map((bullet, i) => (
+                        <li key={i}>{bullet}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {sec.question && (
+                    <p className="sd-question">
+                      {sec.question || DEFAULT_QUESTION_HEADING}
+                    </p>
+                  )}
+                  {sec.text2 && <p className="sd-p">{sec.text2}</p>}
+                </>
+              )}
+            </section>
+          ))}
+
+          {/* Map — مفتوحة افتراضيًا + ارتفاع احتياطي للـiframe */}
+          {hasMap && (
+            <details className="sd-fold" open>
+              <summary className="sd-fold-summary">
+                {service.map!.title ?? DEFAULT_MAP_TITLE}
+              </summary>
+
+              <div className="sd-map">
+                {service.map!.embedUrl ? (
+                  <iframe
+                    src={service.map!.embedUrl}
+                    title={service.map!.title ?? service.title}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    allowFullScreen
+                    style={{ width: "100%", height: 360, border: 0 }} // ✅ fallback ارتفاع
                   />
                 ) : (
-                  <>
-                    {sec.text && <p className="section-text">{sec.text}</p>}
-                    {sec.img && (
-                      <div className="section-image-container">
-                        <img
-                          alt={sec.heading || "صورة"}
-                          src={sec.img}
-                          className="section-image"
-                          loading="lazy"
-                        />
-                      </div>
-                    )}
-                    {sec.text3 && <p className="section-text">{sec.text3}</p>}
-                    {sec.text4 && <p className="section-text">{sec.text4}</p>}
-                    {sec.bullets && sec.bullets.length > 0 && (
-                      <ul className="section-bullets">
-                        {sec.bullets.map((b, i) => (
-                          <li key={i}>{b}</li>
-                        ))}
-                      </ul>
-                    )}
-                    {sec.question && <p className="section-question">{sec.question}</p>}
-                    {sec.text2 && <p className="section-text">{sec.text2}</p>}
-                  </>
-                )}
-              </section>
-            ))}
-
-            {/* خريطة من JSON (embedUrl أو link عادي) */}
-            {service.map && (
-              <section id="map" className="map-section">
-                <h2 className="section-heading">
-                  {service.map.title ?? "الموقع على الخريطة"}
-                </h2>
-
-                {service.map.embedUrl ? (
-                  <div className="map-embed">
-                    <iframe
-                      src={service.map.embedUrl}
-                      width="100%"
-                      height="360"
-                      style={{ border: 0 }}
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      title={service.map.title ?? service.title}
-                    />
-                  </div>
-                ) : service.map.link ? (
                   <p>
                     <a
-                      className="map-link"
-                      href={service.map.link}
+                      className="sd-map-link"
+                      href={service.map!.link!}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      فتح الخريطة
+                      {MAP_LINK_LABEL}
                     </a>
                   </p>
-                ) : null}
-              </section>
-            )}
+                )}
+              </div>
+            </details>
+          )}
 
-            <div className="service-meta">
-              <div className="service-id">رقم الخدمة: {service.id}</div>
-              <div className="service-category">خدمات سباكة وصحية</div>
-            </div>
+          {/* CTAs — أيقونات من react-icons */}
+          <div className="sd-ctas iconbar">
+            {/* اتصال */}
+            <a
+              href="tel:+96500000000"
+              className="btn icon primary"
+              title="اتصال هاتفي"
+              aria-label="اتصال هاتفي"
+            >
+              <FiPhone className="ico" />
+              <span className="sr-only">اتصال</span>
+            </a>
 
-            <div className="cta-buttons">
-              <a href="tel:+96500000000" className="cta-button primary">
-                اتصل بنا الآن
-              </a>
-              <a
-                href="https://wa.me/96500000000"
-                className="cta-button secondary"
-                target="_blank"
-                rel="noreferrer"
-              >
-                تواصل عبر واتساب
-              </a>
-            </div>
+            {/* واتساب */}
+            <a
+              href="https://wa.me/96500000000"
+              className="btn icon accent"
+              target="_blank"
+              rel="noreferrer"
+              title="واتساب"
+              aria-label="واتساب"
+            >
+              <FaWhatsapp className="ico" />
+              <span className="sr-only">واتساب</span>
+            </a>
+
+            {/* تواصل معنا — يذهب لصفحة /contact داخل الموقع */}
+            <Link
+              to="/contact"
+              className="btn icon ghost"
+              title="تواصل معنا"
+              aria-label="تواصل معنا"
+            >
+              <FiMail className="ico" />
+              <span className="sr-only">تواصل معنا</span>
+            </Link>
           </div>
         </article>
 
-        <aside className="related-services">
-          <h3>خدمات ذات صلة</h3>
-          <div className="related-services-list">
-            {servicesPlumbing.slice(0, 7).map((item) => (
+        {/* Related في الأسفل */}
+        <section className="sd-related" aria-labelledby="sd-related-title">
+          <h3 id="sd-related-title" className="sd-related-title">
+            {RELATED_SERVICES_TITLE}
+          </h3>
+          <div className="sd-related-list">
+            {servicesPlumbing.slice(0, 8).map((item) => (
               <Link
                 key={item.urlSlug}
                 to={toServicePath(item.urlSlug)}
-                className="related-service-card"
+                className="sd-card"
               >
                 {item.img && (
                   <img src={item.img} alt={item.title} loading="lazy" />
                 )}
-                <h4>{item.title}</h4>
-                <span className="read-more">عرض التفاصيل</span>
+                <div className="sd-card-body">
+                  <h4 className="sd-card-title">{item.title}</h4>
+                  <span className="sd-card-link">{VIEW_DETAILS_LABEL}</span>
+                </div>
               </Link>
             ))}
           </div>
-        </aside>
+        </section>
+
+        {/* ✅ Widgets تحت سيكشن "قد يعجبك أيضًا" */}
+        <section className="sd-widgets" aria-label="widgets">
+          <SidebarWidgets
+            titleLatest="أحدث الخدمات المنشورة"
+            titleCategories="تصنيفات الخدمات"
+          />
+        </section>
       </main>
     </div>
   );

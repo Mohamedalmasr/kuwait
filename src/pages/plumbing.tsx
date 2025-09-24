@@ -1,147 +1,143 @@
-import { FaFileAlt, FaFolder, FaTimes } from "react-icons/fa";
+﻿// src/pages/Plumbing.tsx
 import { useState } from "react";
+import { NavLink } from "react-router-dom";
+import { FaTimes, FaTools, FaSpinner } from "react-icons/fa";
+
+import "../styles/Home.css";
 import "../styles/plumbing.css";
 
-type PlumbingCardProps = {
+import { servicesPlumbing } from "../data/services";
+import { generateServiceUrl } from "../utils/urls";
+import { slugify } from "../utils/slug";
+import SidebarWidgets from "./SidebarWidgets";
+
+type ServiceItem = {
+  id?: string | number;
   title: string;
-  img: string;
-  shortText: string;
-  expandedText: string;
-  onImageClick?: (src: string) => void;
+  text: string;
+  img?: string;
+  link?: string;
+  slug?: string;
+  urlSlug?: string;
 };
 
-const PlumbingCard = ({
-  title,
-  img,
-  shortText,
-  expandedText,
-  onImageClick,
-}: PlumbingCardProps) => {
-  const [expanded, setExpanded] = useState(false);
+const PAGE_SIZE = 12;
 
-  return (
-    <div className="plumbing-card">
-      <div className="plumbing-card-image">
-        <img
-          src={img}
-          alt={title}
-          style={{ cursor: "pointer" }}
-          onClick={() => onImageClick && onImageClick(img)}
-        />
-      </div>
-      <div className="plumbing-card-content">
-        <h3>{title}</h3>
-        <p>
-          {shortText}
-          {expanded && <> {expandedText} </>}
-        </p>
-        <a
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            setExpanded(!expanded);
-          }}
-        >
-          {expanded ? "اقرأ أقل «" : "أكمل القراءة »"}
-        </a>
-      </div>
-    </div>
-  );
-};
+const BREADCRUMB = "الرئيسية / فني صحي الكويت";
+const PAGE_TITLE = "فني صحي الكويت";
+const SECTION_TITLE = "خدمات فني صحي الكويت";
+const READ_MORE = "اقرأ التفاصيل الآن";
+const LOAD_MORE = "عرض المزيد من الخدمات";
+const LOADING = "جارٍ التحميل...";
+const IMAGE_ALT = "صورة الخدمة";
 
-const plumbing = () => {
+const Plumbing = () => {
   const [openedImage, setOpenedImage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const closeImage = () => setOpenedImage(null);
 
+  const items = ((servicesPlumbing as ServiceItem[]) || []);
+  const [visibleCount, setVisibleCount] = useState(Math.min(PAGE_SIZE, items.length));
+  const visible = items.slice(0, visibleCount);
+  const hasMore = visibleCount < items.length;
+
+  const toDetails = (item: ServiceItem, idx: number) => {
+    const generatedSlug = item.urlSlug || item.slug || slugify(item.title, "preserve-arabic");
+
+    return generateServiceUrl({
+      id: item.id ?? idx,
+      title: item.title,
+      slug: generatedSlug,
+      urlSlug: generatedSlug,
+      link: item.link,
+    });
+  };
+
+  const handleLoadMore = () => {
+    if (loading) return;
+    setLoading(true);
+    setTimeout(() => {
+      setVisibleCount((c) => Math.min(c + PAGE_SIZE, items.length));
+      setLoading(false);
+    }, 400);
+  };
+
   return (
     <div className="rtl" dir="rtl">
-      {/* ✅ نافذة الصورة المكبرة */}
       {openedImage && (
         <div className="image-modal" onClick={closeImage}>
-          <div
-            className="image-modal-content"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img src={openedImage} alt="صورة مكبرة" />
-            <button className="close-btn" onClick={closeImage}>
+          <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
+            <img src={openedImage} alt={IMAGE_ALT} />
+            <button className="close-btn" onClick={closeImage} aria-label="Close">
               <FaTimes />
             </button>
           </div>
         </div>
       )}
 
-      {/* ✅ Page Header */}
       <section className="page-header">
-        <div className="breadcrumb">الرئيسية / فني صحي الكويت</div>
-        <h1>فني صحي الكويت</h1>
+        <div className="breadcrumb">{BREADCRUMB}</div>
+        <h1>{PAGE_TITLE}</h1>
       </section>
 
       <div className="content-wrapper">
-        {/* ✅ Articles */}
-        <div className="plumbing-articles">
-          <PlumbingCard
-            title="مقاول صحي الكويت"
-            img="/image/img13.jpg"
-            shortText="مقاول صحي الكويت يقدم خدمات تركيب وصيانة الأدوات الصحية باحترافية عالية."
-            expandedText="نستخدم أفضل المعدات ونوفر ضمان على جميع الأعمال الصحية في الكويت."
-            onImageClick={setOpenedImage}
-          />
-          <PlumbingCard
-            title="فني صحي الكويت"
-            img="/image/img14.jpg"
-            shortText="فني صحي الكويت متاح على مدار الساعة لجميع أعمال السباكة."
-            expandedText="خدمة سريعة وأسعار مناسبة لجميع العملاء في مختلف المناطق."
-            onImageClick={setOpenedImage}
-          />
-          {/* أضف المزيد بنفس الطريقة مع نصوص وصور مختلفة */}
-        </div>
+        <main className="page-main">
+          <section id="servicesPlumbing" className="services-section">
+            <h2 className="section-title">
+              <span className="icon">
+                {SECTION_TITLE} <FaTools />
+              </span>
+            </h2>
 
-        {/* ✅ Sidebar */}
-        <div className="plumbing-sidebar">
-          <div className="plumbing-sidebar-box">
-            <div className="plumbing-sidebar-title">
-              <FaFileAlt /> أحدث المقالات
-            </div>
-            <ul className="plumbing-sidebar-list">
-              <li>
-                <a href="#">أفضل فني صحي الكويت</a>
-              </li>
-              <li>
-                <a href="#">نصائح للحفاظ على الأدوات الصحية</a>
-              </li>
-              <li>
-                <a href="#">أهمية الصيانة الدورية للسباكة</a>
-              </li>
-              <li>
-                <a href="#">كيفية اختيار فني صحي محترف</a>
-              </li>
-            </ul>
-          </div>
+            <div className="services">
+              {visible.map((it, idx) => (
+                <div className="service-card" key={it.id ?? it.urlSlug ?? it.slug ?? idx}>
+                  {it.img && (
+                    <img
+                      src={it.img}
+                      alt={it.title || IMAGE_ALT}
+                      loading="lazy"
+                      onClick={() => it.img && setOpenedImage(it.img)}
+                      style={{ cursor: "pointer" }}
+                    />
+                  )}
+                  <h3>{it.title}</h3>
+                  <p>{it.text}</p>
 
-          <div className="plumbing-sidebar-box">
-            <div className="plumbing-sidebar-title">
-              <FaFolder /> تصنيفات
+                  <NavLink to={toDetails(it, idx)} className="read-more">
+                    {READ_MORE}
+                  </NavLink>
+                </div>
+              ))}
             </div>
-            <ul className="plumbing-sidebar-list">
-              <li>
-                <a href="#">سباكة</a>
-              </li>
-              <li>
-                <a href="#">أدوات صحية</a>
-              </li>
-              <li>
-                <a href="#">صيانة</a>
-              </li>
-              <li>
-                <a href="#">تركيب</a>
-              </li>
-            </ul>
-          </div>
-        </div>
+
+            {hasMore && (
+              <div className="load-more-bar">
+                <button
+                  className="ig-load-more"
+                  onClick={handleLoadMore}
+                  disabled={loading}
+                  aria-busy={loading}
+                >
+                  {loading ? (
+                    <>
+                      <FaSpinner className="spin" aria-hidden="true" />
+                      {LOADING}
+                    </>
+                  ) : (
+                    LOAD_MORE
+                  )}
+                </button>
+              </div>
+            )}
+          </section>
+        </main>
+
+        <SidebarWidgets />
       </div>
     </div>
   );
 };
 
-export default plumbing;
+export default Plumbing;

@@ -168,6 +168,14 @@
   margin-right: 4px;
 }
 
+/* ✅ Category Count Styling */
+.category-count {
+  color: #888;
+  font-size: 13px;
+  margin-right: 4px;
+  font-weight: normal;
+}
+
 /* ✅ Image Modal */
 .image-modal {
   position: fixed;
@@ -215,3 +223,23 @@
 .close-btn:hover {
   background: #004883;
 }
+/* ✅ Load More Button */
+.ig-load-more{
+  appearance:none; -webkit-appearance:none;
+  background: #fff;
+  color:#262626;
+  border:1px solid #dbdbdb;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s ease, transform .12s ease, border-color .15s ease, opacity .15s ease;
+  display:inline-flex; align-items:center; gap:10px;
+}
+.ig-load-more:hover{ background:#fafafa; transform: translateY(-1px); }
+.ig-load-more:active{ transform: translateY(0); }
+.ig-load-more:disabled{ opacity:.6; cursor: default; }
+.ig-load-more .spin{
+  animation: igspin 1s linear infinite;
+}
+@keyframes igspin{ to { transform: rotate(360deg); } }
