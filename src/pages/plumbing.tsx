@@ -31,13 +31,49 @@ const LOAD_MORE = "عرض المزيد من الخدمات";
 const LOADING = "جارٍ التحميل...";
 const IMAGE_ALT = "صورة الخدمة";
 
+/* -------------------- إضافات بسيطة لمنع التكرار في الواجهة -------------------- */
+/** توحيد النص العربي (إزالة محارف التوجيه والمسافات الزائدة) */
+const norm = (s?: string) =>
+  (s || "")
+    .normalize("NFKC")
+    .replace(/[\u200e\u200f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+/** فلترة العناصر مع الحفاظ على أول ظهور */
+function uniqueBy<T>(arr: T[], getKey: (x: T) => string) {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const item of arr) {
+    const k = getKey(item) || "";
+    if (k && seen.has(k)) continue;
+    if (k) seen.add(k);
+    out.push(item);
+  }
+  return out;
+}
+
+/** منع التكرار حسب (العنوان + المقتطف) أو العنوان فقط */
+function uniqueCards(arr: ServiceItem[], mode: "title" | "title+text" = "title+text") {
+  return uniqueBy(arr, (o) => {
+    const t = norm(o.title);
+    const txt = norm(o.text || "");
+    return mode === "title" ? t : `${t}|${txt}`;
+  });
+}
+/* --------------------------------------------------------------------------- */
+
 const Plumbing = () => {
   const [openedImage, setOpenedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const closeImage = () => setOpenedImage(null);
 
-  const items = ((servicesPlumbing as ServiceItem[]) || []);
+  // كان: const items = ((servicesPlumbing as ServiceItem[]) || []);
+  // الآن: ننقّي التكرارات في الواجهة فقط (لا نغير البيانات الأصلية)
+  const rawItems = ((servicesPlumbing as ServiceItem[]) || []);
+  const items = uniqueCards(rawItems, "title+text");
+
   const [visibleCount, setVisibleCount] = useState(Math.min(PAGE_SIZE, items.length));
   const visible = items.slice(0, visibleCount);
   const hasMore = visibleCount < items.length;
@@ -92,7 +128,11 @@ const Plumbing = () => {
 
             <div className="services">
               {visible.map((it, idx) => (
-                <div className="service-card" key={it.id ?? it.urlSlug ?? it.slug ?? idx}>
+                <div
+                  className="service-card"
+                  // مفتاح أكثر تفرّدًا لتجنب تكرارات React DOM
+                  key={`${it.id ?? idx}-${it.urlSlug ?? it.slug ?? slugify(it.title, "preserve-arabic")}`}
+                >
                   {it.img && (
                     <img
                       src={it.img}

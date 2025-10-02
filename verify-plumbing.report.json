@@ -1,0 +1,24 @@
+{
+  "summary": {
+    "localCount": 106,
+    "categoryCount": 106,
+    "categoryDiffs": 0,
+    "articleDiffs": 0,
+    "missingImages": 0
+  },
+  "duplicates": {
+    "byTitle": [
+      {
+        "key": "فني صحي مشرف",
+        "ids": [
+          70,
+          99
+        ]
+      }
+    ],
+    "bySlug": []
+  },
+  "categoryDiffs": [],
+  "articleDiffs": [],
+  "missingImages": []
+}
