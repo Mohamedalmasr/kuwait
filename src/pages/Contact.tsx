@@ -2,12 +2,11 @@
 import { useState } from "react";
 import "../styles/contact.css";
 
-// Firebase
 import { db } from "../Models/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
-// âœ… util Ù„ØªØ·Ø¨ÙŠØ¹ Ø£Ø±Ù‚Ø§Ù… Ø§Ù„Ø¯ÙˆÙ„ Ø§Ù„Ø¹Ø±Ø¨ÙŠØ© (E.164)
 import { normalizePhone } from "../utils/phone";
+import { getLocalUid } from "../utils/localUser";
 
 type FormState = {
   name: string;
@@ -17,7 +16,7 @@ type FormState = {
 
 type FormErrors = Partial<Record<keyof FormState, string>>;
 
-const PREFERRED_ISO = "KW"; // Ø§Ù„Ø¨Ù„Ø¯ Ø§Ù„Ø§ÙØªØ±Ø§Ø¶ÙŠ Ù„ØªÙØ³ÙŠØ± Ø§Ù„Ø£Ø±Ù‚Ø§Ù… Ø§Ù„Ù…Ø­Ù„ÙŠØ©
+const PREFERRED_ISO = "KW";
 
 const Contact = () => {
   const [form, setForm] = useState<FormState>({
@@ -25,49 +24,52 @@ const Contact = () => {
     phone: "",
     message: "",
   });
-
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
   const [okMsg, setOkMsg] = useState("");
   const [errMsg, setErrMsg] = useState("");
 
-  const sanitize = (v: string) => v.replace(/\s+/g, " ").trim();
+  const sanitize = (value: string) => value.replace(/\s+/g, " ").trim();
 
-  // Ø¨Ø¯ÙŠÙ„ Ø¨Ø³ÙŠØ· Ù„Ùˆ util ÙØ´Ù„
-  const normalizePhoneBasic = (v: string) => {
-    const plus = v.trim().startsWith("+");
-    const digits = v.replace(/\D/g, "");
+  const normalizePhoneBasic = (value: string) => {
+    const plus = value.trim().startsWith("+");
+    const digits = value.replace(/\D/g, "");
     return plus ? `+${digits}` : digits;
   };
 
   const validateField = (name: keyof FormState, value: string) => {
     const v = sanitize(value);
     if (name === "name") {
-      if (v.length < 2 || v.length > 80) return "Ù…Ù† ÙØ¶Ù„Ùƒ Ø§ÙƒØªØ¨ Ø§Ø³Ù…Ù‹Ø§ ØµØ­ÙŠØ­Ù‹Ø§ (2â€“80 Ø­Ø±Ù).";
+      if (v.length < 2 || v.length > 80) {
+        return "ÇáÇÓã íÌÈ Ãä íßæä Èíä 2 æ 80 ÍÑİğÇ";
+      }
     }
     if (name === "message") {
-      if (v.length < 5 || v.length > 2000) return "Ù…Ù† ÙØ¶Ù„Ùƒ Ø§ÙƒØªØ¨ Ø±Ø³Ø§Ù„Ø© ÙˆØ§Ø¶Ø­Ø© (5â€“2000 Ø­Ø±Ù).";
+      if (v.length < 5 || v.length > 2000) {
+        return "ÇáÑÓÇáÉ íÌÈ Ãä Êßæä Èíä 5 æ 2000 ÍÑİ";
+      }
     }
     if (name === "phone") {
-      if (!v) return ""; // Ø§Ù„Ù‡Ø§ØªÙ Ø§Ø®ØªÙŠØ§Ø±ÙŠ
-      const d = v.replace(/\D/g, "");
-      if (d.length < 7 || d.length > 15) return "Ø±Ù‚Ù… Ø§Ù„Ù‡Ø§ØªÙ ØºÙŠØ± ØµØ§Ù„Ø­.";
+      if (!v) {
+        return "";
+      }
+      const digits = v.replace(/\D/g, "");
+      if (digits.length < 7 || digits.length > 15) {
+        return "ÑŞã ÇáåÇÊİ ÛíÑ ÕÍíÍ";
+      }
     }
     return "";
   };
 
   const validateAll = (values: FormState) => {
-    const e: FormErrors = {};
+    const errs: FormErrors = {};
     const nameErr = validateField("name", values.name);
-    if (nameErr) e.name = nameErr;
-
+    if (nameErr) errs.name = nameErr;
     const phoneErr = validateField("phone", values.phone);
-    if (phoneErr) e.phone = phoneErr;
-
-    const msgErr = validateField("message", values.message);
-    if (msgErr) e.message = msgErr;
-
-    return e;
+    if (phoneErr) errs.phone = phoneErr;
+    const messageErr = validateField("message", values.message);
+    if (messageErr) errs.message = messageErr;
+    return errs;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -75,15 +77,14 @@ const Contact = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
     setOkMsg("");
     setErrMsg("");
-
-    const err = validateField(name as keyof FormState, value);
-    setErrors((prev) => ({ ...prev, [name]: err || undefined }));
+    const fieldErr = validateField(name as keyof FormState, value);
+    setErrors((prev) => ({ ...prev, [name]: fieldErr || undefined }));
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    const err = validateField(name as keyof FormState, value);
-    setErrors((prev) => ({ ...prev, [name]: err || undefined }));
+    const fieldErr = validateField(name as keyof FormState, value);
+    setErrors((prev) => ({ ...prev, [name]: fieldErr || undefined }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -91,23 +92,21 @@ const Contact = () => {
     setOkMsg("");
     setErrMsg("");
 
-
     if (typeof navigator !== "undefined" && "onLine" in navigator && !navigator.onLine) {
-      setErrMsg("Ù„Ø§ ÙŠÙˆØ¬Ø¯ Ø§ØªØµØ§Ù„ Ø¨Ø§Ù„Ø¥Ù†ØªØ±Ù†Øª.");
+      setErrMsg("áÇ íãßä ÇáÅÑÓÇá ÈÏæä ÇÊÕÇá ÈÇáÅäÊÑäÊ");
       return;
     }
 
-    // ØªÙ†Ø¸ÙŠÙ
     const cleaned: FormState = {
       name: sanitize(form.name),
       phone: sanitize(form.phone),
       message: sanitize(form.message),
     };
 
-    const eAll = validateAll(cleaned);
-    setErrors(eAll);
-    if (Object.keys(eAll).length > 0) {
-      setErrMsg("Ù…Ù† ÙØ¶Ù„Ùƒ ØµØ­Ù‘Ø­ Ø§Ù„Ø­Ù‚ÙˆÙ„ Ø§Ù„Ù…ÙˆØ¶Ù‘Ø­Ø©.");
+    const validation = validateAll(cleaned);
+    setErrors(validation);
+    if (Object.keys(validation).length > 0) {
+      setErrMsg("íÑÌì ÊÕÍíÍ ÇáÍŞæá ÇáÅáÒÇãíÉ");
       return;
     }
 
@@ -117,13 +116,12 @@ const Contact = () => {
     let phoneCountryIso: string | null = null;
 
     if (phoneRaw) {
-      const n = normalizePhone(phoneRaw, { preferredIso: PREFERRED_ISO });
-      if (n.ok) {
-        phoneE164 = n.e164;             
-        phoneIntlDigits = n.intlDigits;
-        phoneCountryIso = n.country.iso2;
+      const normalized = normalizePhone(phoneRaw, { preferredIso: PREFERRED_ISO });
+      if (normalized.ok) {
+        phoneE164 = normalized.e164;
+        phoneIntlDigits = normalized.intlDigits;
+        phoneCountryIso = normalized.country.iso2;
       } else {
-        // fallback: Ø§Ù„Ù†Ø³Ø®Ø© Ø§Ù„Ø¨Ø³ÙŠØ·Ø©
         const basic = normalizePhoneBasic(phoneRaw);
         phoneE164 = basic.startsWith("+") ? basic : null;
         phoneIntlDigits = basic.startsWith("+") ? basic.slice(1) : basic || null;
@@ -133,25 +131,29 @@ const Contact = () => {
 
     setLoading(true);
     try {
+      const senderUid = getLocalUid();
+
       await addDoc(collection(db, "messages"), {
         name: cleaned.name,
         phone: phoneRaw || null,
-        phoneE164: phoneE164,
+        phoneE164,
         phoneIntl: phoneIntlDigits,
         phoneCountry: phoneCountryIso,
-        message: cleaned.message,
-        read: false,
+        text: cleaned.message,
+        senderUid,
+        readBy: { [senderUid]: true },
+        deletedFor: {},
         createdAt: serverTimestamp(),
         ua: typeof navigator !== "undefined" ? navigator.userAgent : null,
         ref: typeof window !== "undefined" ? window.location.pathname : null,
       });
 
-      setOkMsg("ØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ø±Ø³Ø§Ù„ØªÙƒ Ø¨Ù†Ø¬Ø§Ø­");
+      setOkMsg("Êã ÅÑÓÇá ÇáÑÓÇáÉ ÈäÌÇÍ.");
       setForm({ name: "", phone: "", message: "" });
       setErrors({});
     } catch (error) {
-      console.error("Ø®Ø·Ø£ Ø£Ø«Ù†Ø§Ø¡ Ø§Ù„Ø¥Ø±Ø³Ø§Ù„:", error);
-      setErrMsg("Ø­Ø¯Ø« Ø®Ø·Ø£ Ø£Ø«Ù†Ø§Ø¡ Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø±Ø³Ø§Ù„Ø©. Ø­Ø§ÙˆÙ„ Ù…Ø±Ø© Ø£Ø®Ø±Ù‰.");
+      console.error("İÔá ÅÑÓÇá ÇáÑÓÇáÉ:", error);
+      setErrMsg("ÍÏË ÎØÃ ÃËäÇÁ ÅÑÓÇá ÇáÑÓÇáÉ. ÍÇæá ãÑÉ ÃÎÑì.");
     } finally {
       setLoading(false);
     }
@@ -160,13 +162,12 @@ const Contact = () => {
   return (
     <div className="rtl" dir="rtl">
       <section className="page-header">
-        <div className="breadcrumb">Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ© / ØªÙˆØ§ØµÙ„ Ù…Ø¹Ù†Ø§</div>
-        <h1>ØªÙˆØ§ØµÙ„ Ù…Ø¹Ù†Ø§</h1>
+        <div className="breadcrumb">ÇáÑÆíÓíÉ / ÊæÇÕá ãÚäÇ</div>
+        <h1>ÊæÇÕá ãÚäÇ</h1>
       </section>
 
       <div className="contact-container">
         <form className="contact-form" onSubmit={handleSubmit} noValidate>
-          {/* Ø±Ø³Ø§Ø¦Ù„ Ø§Ù„Ø­Ø§Ù„Ø© Ø§Ù„Ø¹Ø§Ù…Ø© */}
           {okMsg && (
             <div className="contact-alert contact-alert--ok" role="status" aria-live="polite">
               {okMsg}
@@ -178,9 +179,8 @@ const Contact = () => {
             </div>
           )}
 
-          {/* Ø§Ù„Ø§Ø³Ù… */}
           <div className={`form-field ${errors.name ? "has-error" : ""}`}>
-            <label htmlFor="name">Ø§Ù„Ø§Ø³Ù…</label>
+            <label htmlFor="name">ÇáÇÓã</label>
             <input
               className={`input ${errors.name ? "input--error" : ""}`}
               type="text"
@@ -190,23 +190,19 @@ const Contact = () => {
               onChange={handleChange}
               onBlur={handleBlur}
               required
-              placeholder="Ø§ÙƒØªØ¨ Ø§Ø³Ù…Ùƒ Ù‡Ù†Ø§"
+              placeholder="ÇßÊÈ ÇÓãß"
               autoComplete="name"
               aria-invalid={!!errors.name}
               aria-describedby={errors.name ? "name-error" : undefined}
               disabled={loading}
             />
             {errors.name && (
-              <>
-                <span className="error-icon" aria-hidden>âš </span>
-                <div id="name-error" className="field-error">{errors.name}</div>
-              </>
+              <div id="name-error" className="field-error">{errors.name}</div>
             )}
           </div>
 
-          {/* Ø§Ù„Ù‡Ø§ØªÙ (Ø§Ø®ØªÙŠØ§Ø±ÙŠ) */}
           <div className={`form-field ${errors.phone ? "has-error" : ""}`}>
-            <label htmlFor="phone">Ø±Ù‚Ù… Ø§Ù„Ù‡Ø§ØªÙ</label>
+            <label htmlFor="phone">ÑŞã ÇáåÇÊİ</label>
             <input
               className={`input ${errors.phone ? "input--error" : ""}`}
               type="tel"
@@ -215,23 +211,19 @@ const Contact = () => {
               value={form.phone}
               onChange={handleChange}
               onBlur={handleBlur}
-              placeholder="Ø±Ù‚Ù… Ø§Ù„Ù‡Ø§ØªÙ (Ø§Ø®ØªÙŠØ§Ø±ÙŠ)"
+              placeholder="ãËÇá: 96550123456"
               autoComplete="tel"
               aria-invalid={!!errors.phone}
               aria-describedby={errors.phone ? "phone-error" : undefined}
               disabled={loading}
             />
             {errors.phone && (
-              <>
-                <span className="error-icon" aria-hidden>âš </span>
-                <div id="phone-error" className="field-error">{errors.phone}</div>
-              </>
+              <div id="phone-error" className="field-error">{errors.phone}</div>
             )}
           </div>
 
-          {/* Ø§Ù„Ø±Ø³Ø§Ù„Ø© */}
           <div className={`form-field ${errors.message ? "has-error" : ""}`}>
-            <label htmlFor="message">Ø±Ø³Ø§Ù„ØªÙƒ</label>
+            <label htmlFor="message">ÑÓÇáÊß</label>
             <textarea
               className={`input ${errors.message ? "input--error" : ""}`}
               id="message"
@@ -240,32 +232,29 @@ const Contact = () => {
               onChange={handleChange}
               onBlur={handleBlur}
               required
-              placeholder="Ø§ÙƒØªØ¨ Ø±Ø³Ø§Ù„ØªÙƒ Ù‡Ù†Ø§"
+              placeholder="ÇßÊÈ ÊİÇÕíá ÇáØáÈ Ãæ ÇáÇÓÊİÓÇÑ"
               rows={5}
               aria-invalid={!!errors.message}
               aria-describedby={errors.message ? "message-error" : undefined}
               disabled={loading}
             />
             {errors.message && (
-              <>
-                <span className="error-icon" aria-hidden>âš </span>
-                <div id="message-error" className="field-error">{errors.message}</div>
-              </>
+              <div id="message-error" className="field-error">{errors.message}</div>
             )}
           </div>
 
           <button type="submit" className="send-btn" disabled={loading}>
-            {loading ? "Ø¬Ø§Ø±Ù Ø§Ù„Ø¥Ø±Ø³Ø§Ù„..." : "Ø¥Ø±Ø³Ø§Ù„"}
+            {loading ? "ÌÇÑí ÇáÅÑÓÇá..." : "ÅÑÓÇá"}
           </button>
 
-          <p className="contact-hint">Ø³Ù†Ù‚ÙˆÙ… Ø¨Ø§Ù„ØªÙˆØ§ØµÙ„ Ù…Ø¹Ùƒ Ø®Ù„Ø§Ù„ ÙˆÙ‚Øª Ù‚ØµÙŠØ± Ø¨Ø¹Ø¯ Ø§Ø³ØªÙ„Ø§Ù… Ø±Ø³Ø§Ù„ØªÙƒ.</p>
+          <p className="contact-hint">äÍÊÑã ÎÕæÕíÊß¡ æáä äÔÇÑß ÈíÇäÇÊß ãÚ Ãí ÌåÉ ÃÎÑì.</p>
         </form>
 
         <div className="contact-info">
-          <h3>Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø§Ù„ØªÙˆØ§ØµÙ„</h3>
-          <p>Ø§Ù„Ù‡Ø§ØªÙ: <a href="tel:+96551751604">+96551751604</a></p>
-          <p>Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ: <a href="mailto:info@kuwait.com">info@kuwait.com</a></p>
-          <p>Ø§Ù„Ø¹Ù†ÙˆØ§Ù†: Ø§Ù„ÙƒÙˆÙŠØªØŒ Ø´Ø§Ø±Ø¹ Ø§Ù„Ø®Ø¯Ù…Ø§ØªØŒ Ù…Ø¨Ù†Ù‰ 12</p>
+          <h3>ÈíÇäÇÊ ÇáÊæÇÕá</h3>
+          <p>ÇáåÇÊİ: <a href="tel:+96551751604">+965 5175 1604</a></p>
+          <p>ÇáÈÑíÏ: <a href="mailto:info@kuwait.com">info@kuwait.com</a></p>
+          <p>ÇáÚäæÇä: ÇáßæíÊ - ÔÇÑÚ ÇáãËÇá - ãÈäì 12</p>
         </div>
       </div>
     </div>
@@ -273,4 +262,3 @@ const Contact = () => {
 };
 
 export default Contact;
-

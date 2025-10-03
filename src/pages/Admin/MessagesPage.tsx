@@ -1,8 +1,9 @@
+
 // src/pages/Admin/MessagesPage.tsx
 import { useEffect, useMemo, useState } from "react";
 import { FaTrash, FaEnvelopeOpen, FaEnvelope } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { db } from "../../Models/firebase";
+import { auth, db } from "../../Models/firebase";
 import {
   collection,
   onSnapshot,
@@ -13,97 +14,94 @@ import {
   deleteDoc,
   Timestamp,
 } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 
-import { makeTelHref } from "../../utils/phone"; // ✅ جديد
+import { makeTelHref } from "../../utils/phone";
 import "./messages.css";
 
 type Message = {
   id: string;
   name: string;
   phone: string;
-  message: string;
-  read: boolean;
+  text: string;
   createdAt?: Timestamp | null;
+  readBy: Record<string, boolean>;
+  deletedFor: Record<string, boolean>;
+  senderId?: string;
+  recipients?: string[];
 };
 
-const PREFERRED_ISO = "KW"; // 👈 بلدك الافتراضي للأرقام المحلية
+const PREFERRED_ISO = "KW";
 
 const MessagesPage = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [onlyUnread, setOnlyUnread] = useState(false);
   const [working, setWorking] = useState(false);
-
-  // ✅ إضافات حالة
   const [loadingInitial, setLoadingInitial] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentUid, setCurrentUid] = useState<string | null>(auth.currentUser?.uid ?? null);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setCurrentUid(user?.uid ?? null);
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     setLoadingInitial(true);
     setError(null);
 
-    const baseRef = collection(db, "messages");
-    const qRef = query(baseRef, orderBy("createdAt", "desc"));
+    const qRef = query(collection(db, "messages"), orderBy("createdAt", "desc"));
 
-    const handleSnapshot = (snapshot: any) => {
-      const msgs: Message[] = snapshot.docs.map((d: any) => {
-        const data = d.data() as any;
-        return {
-          id: d.id,
-          name: data?.name || "مستخدم",
-          phone: data?.phone || "غير متوفر",
-          message: data?.message || "",
-          read: Boolean(data?.read),
-          createdAt: data?.createdAt || null,
-        };
-      });
-      // لو fallback بدون ترتيب، رتب محليًا
-      msgs.sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
-      setMessages(msgs);
-      setLoadingInitial(false);
-    };
-
-    const handleError = (err: any) => {
-      console.error("[Firestore:onSnapshot] error:", err);
-      if (err?.code === "failed-precondition") {
-        // فهرس ناقص → fallback بدون orderBy
-        console.warn("Falling back to un-ordered snapshot due to missing index.");
-        const unsub2 = onSnapshot(
-          baseRef,
-          handleSnapshot,
-          (err2) => {
-            console.error("[Fallback:onSnapshot] error:", err2);
-            setError(humanizeFirestoreError(err2));
-            setLoadingInitial(false);
-          }
-        );
-        return () => unsub2();
+    const unsub = onSnapshot(
+      qRef,
+      (snapshot) => {
+        const list: Message[] = snapshot.docs.map((docSnap) => {
+          const data = docSnap.data() as any;
+          const readBy = data?.readBy && typeof data.readBy === "object" ? data.readBy : {};
+          const deletedFor = data?.deletedFor && typeof data.deletedFor === "object" ? data.deletedFor : {};
+          return {
+            id: docSnap.id,
+            name: data?.name || "زائر",
+            phone: data?.phone || "غير معروف",
+            text: data?.text || data?.message || "",
+            createdAt: data?.createdAt || null,
+            readBy,
+            deletedFor,
+            senderId: data?.senderId || null,
+            recipients: Array.isArray(data?.recipients) ? data.recipients : [],
+          };
+        });
+        list.sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
+        setMessages(list);
+        setLoadingInitial(false);
+      },
+      (err) => {
+        console.error("[Firestore:onSnapshot] error:", err);
+        setError(humanizeFirestoreError(err));
+        setLoadingInitial(false);
       }
-      setError(humanizeFirestoreError(err));
-      setLoadingInitial(false);
-      return undefined;
-    };
+    );
 
-    const unsub1 = onSnapshot(qRef, handleSnapshot, (err) => {
-      const maybeUnsubFallback = handleError(err);
-      if (typeof maybeUnsubFallback === "function") {
-        cleanup = maybeUnsubFallback;
-      }
-    });
-
-    let cleanup = () => unsub1();
-    return () => cleanup();
+    return () => unsub();
   }, []);
 
-  const displayed = useMemo(
-    () => (onlyUnread ? messages.filter((m) => !m.read) : messages),
-    [messages, onlyUnread]
-  );
+  const visibleMessages = useMemo(() => {
+    if (!currentUid) return messages;
+    return messages.filter((msg) => !msg.deletedFor?.[currentUid]);
+  }, [messages, currentUid]);
+
+  const displayed = useMemo(() => {
+    if (!onlyUnread || !currentUid) return visibleMessages;
+    return visibleMessages.filter((msg) => !msg.readBy?.[currentUid]);
+  }, [visibleMessages, onlyUnread, currentUid]);
 
   const allVisibleSelected =
-    displayed.length > 0 && displayed.every((m) => selected.has(m.id));
+    displayed.length > 0 && displayed.every((msg) => selected.has(msg.id));
   const someVisibleSelected =
-    displayed.some((m) => selected.has(m.id)) && !allVisibleSelected;
+    displayed.some((msg) => selected.has(msg.id)) && !allVisibleSelected;
 
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
@@ -117,18 +115,67 @@ const MessagesPage = () => {
     setSelected((prev) => {
       const next = new Set(prev);
       if (allVisibleSelected) {
-        displayed.forEach((m) => next.delete(m.id));
+        displayed.forEach((msg) => next.delete(msg.id));
       } else {
-        displayed.forEach((m) => next.add(m.id));
+        displayed.forEach((msg) => next.add(msg.id));
       }
       return next;
     });
   };
 
-  const confirmDelete = async (ids: string[]) => {
-    if (ids.length === 0) return;
+  const markAsRead = async (ids: string[]) => {
+    if (!currentUid || ids.length === 0) return;
+    setWorking(true);
+    try {
+      await Promise.all(
+        ids.map((id) => updateDoc(doc(db, "messages", id), { [`readBy.${currentUid}`]: true }))
+      );
+    } catch (err) {
+      console.error("Update read state error:", err);
+      alert("تعذر تحديث حالة الرسالة. راجع وحدة التحكم للمزيد من التفاصيل.");
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const hideForMe = async (ids: string[]) => {
+    if (!currentUid || ids.length === 0) return;
+    setWorking(true);
+    try {
+      await Promise.all(
+        ids.map((id) => updateDoc(doc(db, "messages", id), { [`deletedFor.${currentUid}`]: true }))
+      );
+    } catch (err) {
+      console.error("Soft delete error:", err);
+      alert("تعذر إخفاء الرسائل. راجع وحدة التحكم للمزيد من التفاصيل.");
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  const confirmHide = async (ids: string[]) => {
+    if (!ids.length || !currentUid) return;
     const ok = window.confirm(
-      ids.length === 1 ? "هل تريد حذف هذه الرسالة؟" : `هل تريد حذف ${ids.length} رسالة؟`
+      ids.length === 1
+        ? "هل تريد إخفاء هذه الرسالة لك فقط؟"
+        : `هل تريد إخفاء ${ids.length} رسالة لك فقط؟`
+    );
+    if (!ok) return;
+
+    await hideForMe(ids);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
+  };
+
+  const hardDelete = async (ids: string[]) => {
+    if (!ids.length) return;
+    const ok = window.confirm(
+      ids.length === 1
+        ? "هل تريد حذف هذه الرسالة نهائيًا؟"
+        : `هل تريد حذف ${ids.length} رسالة نهائيًا؟`
     );
     if (!ok) return;
 
@@ -140,31 +187,18 @@ const MessagesPage = () => {
         ids.forEach((id) => next.delete(id));
         return next;
       });
-    } catch (e) {
-      console.error("Delete error:", e);
-      alert("حدث خطأ أثناء الحذف. راجع السجل Console.");
-    } finally {
-      setWorking(false);
-    }
-  };
-
-  const markReadState = async (ids: string[], value: boolean) => {
-    if (ids.length === 0) return;
-    setWorking(true);
-    try {
-      await Promise.all(ids.map((id) => updateDoc(doc(db, "messages", id), { read: value })));
-    } catch (e) {
-      console.error("Update read state error:", e);
-      alert("تعذر تعديل الحالة. راجع السجل Console.");
+    } catch (err) {
+      console.error("Hard delete error:", err);
+      alert("تعذر تنفيذ الحذف النهائي. راجع وحدة التحكم للمزيد من التفاصيل.");
     } finally {
       setWorking(false);
     }
   };
 
   const formatDate = (ts?: Timestamp | null) => {
-    if (!ts?.toDate) return "—";
-    const d = ts.toDate();
-    return d.toLocaleString("ar-EG", {
+    if (!ts?.toDate) return "غير متوفر";
+    const date = ts.toDate();
+    return date.toLocaleString("ar-EG", {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
@@ -174,16 +208,22 @@ const MessagesPage = () => {
     });
   };
 
-  const selectedIds = Array.from(selected).filter((id) =>
-    displayed.some((m) => m.id === id)
+  const selectedIds = useMemo(
+    () => Array.from(selected).filter((id) => displayed.some((msg) => msg.id === id)),
+    [selected, displayed]
   );
+
+  const unreadCount = useMemo(() => {
+    if (!currentUid) return visibleMessages.length;
+    return visibleMessages.filter((msg) => !msg.readBy?.[currentUid]).length;
+  }, [visibleMessages, currentUid]);
 
   return (
     <div className="messages-page">
       <div className="messages-header">
         <h2>
-          📩 رسائل العملاء{" "}
-          <span className="badge">{messages.filter((m) => !m.read).length} غير مقروء</span>
+          صندوق رسائل العملاء{" "}
+          <span className="badge">{unreadCount} رسالة غير مقروءة</span>
         </h2>
 
         <div className="actions">
@@ -197,38 +237,35 @@ const MessagesPage = () => {
           </label>
 
           <button
-            disabled={selectedIds.length === 0 || working}
-            onClick={() => markReadState(selectedIds, true)}
-            title="تعليم كمقروء"
+            disabled={selectedIds.length === 0 || working || !currentUid}
+            onClick={() => markAsRead(selectedIds)}
+            title="تعيين الرسائل كمقروءة"
           >
             تعليم كمقروء
           </button>
           <button
-            disabled={selectedIds.length === 0 || working}
-            onClick={() => markReadState(selectedIds, false)}
-            title="تعليم كغير مقروء"
+            className="danger"
+            disabled={selectedIds.length === 0 || working || !currentUid}
+            onClick={() => confirmHide(selectedIds)}
+            title="إخفاء الرسائل لك فقط"
           >
-            تعليم كغير مقروء
+            إخفاء للمدير
           </button>
           <button
-            className="danger"
+            className="danger outline"
             disabled={selectedIds.length === 0 || working}
-            onClick={() => confirmDelete(selectedIds)}
-            title="حذف المحدد"
+            onClick={() => hardDelete(selectedIds)}
+            title="حذف نهائي للرسائل"
           >
-            حذف المحدد
+            حذف نهائي
           </button>
         </div>
       </div>
 
-      {/* رسائل الحالة */}
-      {loadingInitial && <div className="empty info">... جاري تحميل الرسائل من الخادم</div>}
-      {error && (
-        <div className="empty error">
-          {error}
-          {/* لو الخطأ بسبب الفهرس، ستجد رابط الإنشاء في Console */}
-        </div>
+      {loadingInitial && (
+        <div className="empty info">... يتم تحميل الرسائل من قاعدة البيانات</div>
       )}
+      {error && <div className="empty error">{error}</div>}
 
       <div className="table-wrap">
         <table className="messages-table">
@@ -239,13 +276,15 @@ const MessagesPage = () => {
                   <input
                     type="checkbox"
                     checked={allVisibleSelected}
-                    ref={(el) => { if (el) el.indeterminate = someVisibleSelected; }}
+                    ref={(el) => {
+                      if (el) el.indeterminate = someVisibleSelected;
+                    }}
                     onChange={toggleSelectAllVisible}
                   />
                 </label>
               </th>
               <th>الاسم</th>
-              <th>رقم الهاتف</th>
+              <th>الهاتف</th>
               <th>الرسالة</th>
               <th>التاريخ</th>
               <th>الحالة</th>
@@ -255,74 +294,86 @@ const MessagesPage = () => {
           <tbody>
             {!loadingInitial && displayed.length === 0 ? (
               <tr>
-                <td colSpan={7} className="empty">لا توجد رسائل مطابقة</td>
+                <td colSpan={7} className="empty">
+                  لا توجد رسائل لعرضها حاليًا.
+                </td>
               </tr>
             ) : (
-              displayed.map((msg) => (
-                <tr key={msg.id} className={!msg.read ? "unread" : ""}>
-                  <td className="col-check">
-                    <input
-                      type="checkbox"
-                      checked={selected.has(msg.id)}
-                      onChange={() => toggleSelect(msg.id)}
-                    />
-                  </td>
-                  <td>{msg.name}</td>
-                  <td>
-                    {msg.phone && msg.phone !== "غير متوفر" ? (
-                      <a href={makeTelHref(msg.phone, PREFERRED_ISO)}>{msg.phone}</a>
-                    ) : ("—")}
-                  </td>
-                  <td className="msg-text">{msg.message}</td>
-                  <td>{formatDate(msg.createdAt)}</td>
-                  <td>
-                    {msg.read ? (
-                      <span className="status read">مقروء</span>
-                    ) : (
-                      <span className="status unread-badge">غير مقروء</span>
-                    )}
-                  </td>
-                  <td className="col-actions">
-                    <Link to={`/admin/messages/${msg.id}`} className="icon-btn" title="عرض التفاصيل">
-                      👁️ عرض
-                    </Link>
+              displayed.map((msg) => {
+                const isRead = currentUid ? !!msg.readBy?.[currentUid] : false;
+                return (
+                  <tr key={msg.id} className={!isRead ? "unread" : ""}>
+                    <td className="col-check">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(msg.id)}
+                        onChange={() => toggleSelect(msg.id)}
+                      />
+                    </td>
+                    <td>{msg.name}</td>
+                    <td>
+                      {msg.phone && msg.phone !== "غير معروف" ? (
+                        <a href={makeTelHref(msg.phone, PREFERRED_ISO)}>{msg.phone}</a>
+                      ) : (
+                        "غير متوفر"
+                      )}
+                    </td>
+                    <td className="msg-text">{msg.text}</td>
+                    <td>{formatDate(msg.createdAt)}</td>
+                    <td>
+                      {isRead ? (
+                        <span className="status read">مقروء</span>
+                      ) : (
+                        <span className="status unread-badge">غير مقروء</span>
+                      )}
+                    </td>
+                    <td className="col-actions">
+                      <Link
+                        to={`/admin/messages/${msg.id}`}
+                        className="icon-btn"
+                        title="عرض التفاصيل"
+                      >
+                        عرض
+                      </Link>
 
-                    {msg.read ? (
+                      {!isRead && currentUid && (
+                        <button
+                          onClick={() => markAsRead([msg.id])}
+                          disabled={working}
+                          title="تعيين كمقروء"
+                          className="icon-btn"
+                        >
+                          <FaEnvelopeOpen />
+                        </button>
+                      )}
+
                       <button
-                        onClick={() => markReadState([msg.id], false)}
-                        disabled={working}
-                        title="تعليم كغير مقروء"
                         className="icon-btn"
+                        onClick={() => confirmHide([msg.id])}
+                        disabled={working || !currentUid}
+                        title="إخفاء الرسالة لي فقط"
                       >
-                        <FaEnvelope /> غير مقروء
+                        <FaEnvelope />
                       </button>
-                    ) : (
+
                       <button
-                        onClick={() => markReadState([msg.id], true)}
+                        className="danger icon-btn"
+                        onClick={() => hardDelete([msg.id])}
                         disabled={working}
-                        title="تعليم كمقروء"
-                        className="icon-btn"
+                        title="حذف نهائي"
                       >
-                        <FaEnvelopeOpen /> مقروء
+                        <FaTrash />
                       </button>
-                    )}
-                    <button
-                      className="danger icon-btn"
-                      onClick={() => confirmDelete([msg.id])}
-                      disabled={working}
-                      title="حذف"
-                    >
-                      <FaTrash /> حذف
-                    </button>
-                  </td>
-                </tr>
-              ))
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
 
-      {working && <div className="working-overlay">... جاري تنفيذ العملية</div>}
+      {working && <div className="working-overlay">... يتم تنفيذ العملية</div>}
     </div>
   );
 };
@@ -332,13 +383,13 @@ export default MessagesPage;
 function humanizeFirestoreError(err: any): string {
   const code = err?.code || "";
   if (code === "permission-denied") {
-    return "لا تملك صلاحية لقراءة مجموعة الرسائل. تأكد من قواعد Firestore وتسجيل الدخول.";
+    return "لا تملك صلاحية الوصول إلى هذه الرسائل. تحقق من إعدادات Firestore.";
   }
   if (code === "failed-precondition") {
-    return "هذا الاستعلام يحتاج فهرس (Index). افتح Console وستجد رابطًا لإنشائه.";
+    return "هناك مؤشر (Index) مفقود. راجع لوحة تحكم Firebase.";
   }
   if (code === "unavailable") {
-    return "الخدمة غير متاحة مؤقتًا. حاول لاحقًا.";
+    return "خدمة Firestore غير متاحة مؤقتًا. حاول مرة أخرى لاحقًا.";
   }
   return err?.message || "حدث خطأ غير متوقع أثناء جلب الرسائل.";
 }
