@@ -1,4 +1,5 @@
-import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
+import { useEffect } from "react";
+import { createBrowserRouter, RouterProvider, Outlet, useLocation } from "react-router-dom";
 //pages web
 import Header from "./pages/Header";
 import Footer from "./pages/Footer";
@@ -26,6 +27,12 @@ import AuthLayout from "./AuthLayout";
 import "./App.css";
 
 const Layout = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [pathname]);
+
   return (
     <div className="app">
       <Header />
@@ -118,6 +125,8 @@ function App() {
 }
 
 export default App;
+
+
 
 
 

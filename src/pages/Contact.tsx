@@ -263,7 +263,7 @@ const Contact = () => {
 
         <div className="contact-info">
           <h3>معلومات التواصل</h3>
-          <p>الهاتف: <a href="tel:+96550000000">+96550000000</a></p>
+          <p>الهاتف: <a href="tel:+96551751604">+96551751604</a></p>
           <p>البريد الإلكتروني: <a href="mailto:info@kuwait.com">info@kuwait.com</a></p>
           <p>العنوان: الكويت، شارع الخدمات، مبنى 12</p>
         </div>
@@ -273,3 +273,4 @@ const Contact = () => {
 };
 
 export default Contact;
+

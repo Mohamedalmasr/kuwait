@@ -54,7 +54,7 @@ const Header = () => {
       <SearchGlobal />
 
       {/* واتساب */}
-      <a href="https://wa.me/01158936998" className="whatsapp" title="تواصل عبر واتساب">
+      <a href="https://wa.me/96551751604" className="whatsapp" title="تواصل عبر واتساب">
         <FaWhatsapp />
       </a>
 
@@ -73,3 +73,4 @@ const Header = () => {
 };
 
 export default Header;
+

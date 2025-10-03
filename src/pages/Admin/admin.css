@@ -1,4 +1,4 @@
-.admin-login-container {
+﻿.admin-login-container {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -24,6 +24,41 @@
   border: 1px solid #017de3;
   border-radius: 8px;
   font-size: 16px;
+}
+
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  padding-inline-end: 44px;
+}
+
+.admin-login-form .toggle-pwd {
+  position: absolute;
+  inset-inline-end: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #017de3;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.admin-login-form .toggle-pwd:hover,
+.admin-login-form .toggle-pwd:focus-visible {
+  color: #004883;
+}
+
+.admin-login-form .toggle-pwd:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 .admin-login-form button {
   background: #017de3;
@@ -300,3 +335,4 @@
     grid-template-columns: 1fr;
   }
 }
+

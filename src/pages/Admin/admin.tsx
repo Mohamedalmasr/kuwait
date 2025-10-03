@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import "./admin.css";
 import { auth } from "../../Models/firebase";
@@ -126,9 +127,11 @@ const Admin = ({ onLogin }: AdminProps) => {
             className="toggle-pwd"
             onClick={() => setShowPwd((s) => !s)}
             aria-label={showPwd ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+            title={showPwd ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+            aria-pressed={showPwd}
             disabled={loading}
           >
-            {showPwd ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+            {showPwd ? <FaEyeSlash aria-hidden={true} /> : <FaEye aria-hidden={true} />}
           </button>
         </label>
 
@@ -152,3 +155,5 @@ const Admin = ({ onLogin }: AdminProps) => {
 };
 
 export default Admin;
+
+

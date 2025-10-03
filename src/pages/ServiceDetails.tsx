@@ -178,7 +178,7 @@ export default function ServiceDetails() {
           <div className="sd-ctas iconbar">
             {/* اتصال */}
             <a
-              href="tel:+96500000000"
+              href="tel:+96551751604"
               className="btn icon primary"
               title="اتصال هاتفي"
               aria-label="اتصال هاتفي"
@@ -189,7 +189,7 @@ export default function ServiceDetails() {
 
             {/* واتساب */}
             <a
-              href="https://wa.me/96500000000"
+              href="https://wa.me/96551751604"
               className="btn icon accent"
               target="_blank"
               rel="noreferrer"
@@ -248,3 +248,4 @@ export default function ServiceDetails() {
     </div>
   );
 }
+
