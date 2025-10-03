@@ -41,12 +41,12 @@ const Contact = () => {
     const v = sanitize(value);
     if (name === "name") {
       if (v.length < 2 || v.length > 80) {
-        return "วแวำใ ํฬศ รไ ํ฿ๆไ ศํไ 2 ๆ 80 อัÝ๐ว";
+        return "ุงูุงุณู… ูุฌุจ ุฃู ูููู ุจูู 2 ู 80 ุญุฑููุง";
       }
     }
     if (name === "message") {
       if (v.length < 5 || v.length > 2000) {
-        return "วแัำวแษ ํฬศ รไ ส฿ๆไ ศํไ 5 ๆ 2000 อัÝ";
+        return "ุงูุฑุณุงูุฉ ูุฌุจ ุฃู ุชููู ุจูู 5 ู 2000 ุญุฑููุง";
       }
     }
     if (name === "phone") {
@@ -55,7 +55,7 @@ const Contact = () => {
       }
       const digits = v.replace(/\D/g, "");
       if (digits.length < 7 || digits.length > 15) {
-        return "ัÞใ วแๅวสÝ Ûํั ีอํอ";
+        return "ุฑูู… ุงููุงุชู ุบูุฑ ุตุงูุญ";
       }
     }
     return "";
@@ -76,7 +76,8 @@ const Contact = () => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
     setOkMsg("");
-    setErrMsg("");
+    // ู…ุง ูุนุฑุถุด ุฑุณุงูุฉ ุฎุทุฃ ุนุงู…ุฉ ุฃุซูุงุก ุงููุชุงุจุฉ
+    // ูุญุฏู‘ุซ ุฎุทุฃ ุงูุญูู ููุท
     const fieldErr = validateField(name as keyof FormState, value);
     setErrors((prev) => ({ ...prev, [name]: fieldErr || undefined }));
   };
@@ -93,7 +94,7 @@ const Contact = () => {
     setErrMsg("");
 
     if (typeof navigator !== "undefined" && "onLine" in navigator && !navigator.onLine) {
-      setErrMsg("แว ํใ฿ไ วแลัำวแ ศฯๆไ วสีวแ ศวแลไสัไส");
+      setErrMsg("ูุง ููุฌุฏ ุงุชุตุงู ุจุงูุฅูุชุฑูุช");
       return;
     }
 
@@ -106,7 +107,7 @@ const Contact = () => {
     const validation = validateAll(cleaned);
     setErrors(validation);
     if (Object.keys(validation).length > 0) {
-      setErrMsg("ํัฬ์ สีอํอ วแอÞๆแ วแลแาวใํษ");
+      setErrMsg("ูุฑุฌู ุชุตุญูุญ ุงูุฃุฎุทุงุก ุงูู…ูุฌูุฏุฉ.");
       return;
     }
 
@@ -148,12 +149,12 @@ const Contact = () => {
         ref: typeof window !== "undefined" ? window.location.pathname : null,
       });
 
-      setOkMsg("สใ ลัำวแ วแัำวแษ ศไฬวอ.");
+      setOkMsg("ุชู… ุฅุฑุณุงู ุงูุฑุณุงูุฉ ุจูุฌุงุญ.");
       setForm({ name: "", phone: "", message: "" });
       setErrors({});
     } catch (error) {
-      console.error("Ýิแ ลัำวแ วแัำวแษ:", error);
-      setErrMsg("อฯห ฮุร รหไวม ลัำวแ วแัำวแษ. อวๆแ ใัษ รฮั์.");
+      console.error("ุญุฏุซ ุฎุทุฃ ุฃุซูุงุก ุฅุฑุณุงู ุงูุฑุณุงูุฉ:", error);
+      setErrMsg("ุชุนุฐุฑ ุฅุฑุณุงู ุฑุณุงูุชู ุงูุขู. ุญุงูู ู…ุฑุฉ ุฃุฎุฑู.");
     } finally {
       setLoading(false);
     }
@@ -162,8 +163,8 @@ const Contact = () => {
   return (
     <div className="rtl" dir="rtl">
       <section className="page-header">
-        <div className="breadcrumb">วแัฦํำํษ / สๆวีแ ใฺไว</div>
-        <h1>สๆวีแ ใฺไว</h1>
+        <div className="breadcrumb">ุงูุฑุฆูุณูุฉ / ุงุชุตู ุจูุง</div>
+        <h1>ุงุชุตู ุจูุง</h1>
       </section>
 
       <div className="contact-container">
@@ -180,7 +181,7 @@ const Contact = () => {
           )}
 
           <div className={`form-field ${errors.name ? "has-error" : ""}`}>
-            <label htmlFor="name">วแวำใ</label>
+            <label htmlFor="name">ุงูุงุณู…</label>
             <input
               className={`input ${errors.name ? "input--error" : ""}`}
               type="text"
@@ -190,7 +191,7 @@ const Contact = () => {
               onChange={handleChange}
               onBlur={handleBlur}
               required
-              placeholder="ว฿สศ วำใ฿"
+              placeholder="ุงูุชุจ ุงุณู…ู"
               autoComplete="name"
               aria-invalid={!!errors.name}
               aria-describedby={errors.name ? "name-error" : undefined}
@@ -202,7 +203,7 @@ const Contact = () => {
           </div>
 
           <div className={`form-field ${errors.phone ? "has-error" : ""}`}>
-            <label htmlFor="phone">ัÞใ วแๅวสÝ</label>
+            <label htmlFor="phone">ุฑูู… ุงููุงุชู</label>
             <input
               className={`input ${errors.phone ? "input--error" : ""}`}
               type="tel"
@@ -211,7 +212,7 @@ const Contact = () => {
               value={form.phone}
               onChange={handleChange}
               onBlur={handleBlur}
-              placeholder="ใหวแ: 96550123456"
+              placeholder="ู…ุซุงู: +96550123456"
               autoComplete="tel"
               aria-invalid={!!errors.phone}
               aria-describedby={errors.phone ? "phone-error" : undefined}
@@ -223,7 +224,7 @@ const Contact = () => {
           </div>
 
           <div className={`form-field ${errors.message ? "has-error" : ""}`}>
-            <label htmlFor="message">ัำวแส฿</label>
+            <label htmlFor="message">ุงูุฑุณุงูุฉ</label>
             <textarea
               className={`input ${errors.message ? "input--error" : ""}`}
               id="message"
@@ -232,7 +233,7 @@ const Contact = () => {
               onChange={handleChange}
               onBlur={handleBlur}
               required
-              placeholder="ว฿สศ สÝวีํแ วแุแศ รๆ วแวำสÝำวั"
+              placeholder="ุงูุชุจ ุฑุณุงูุชู ุจุงูุชูุตูู ููุง"
               rows={5}
               aria-invalid={!!errors.message}
               aria-describedby={errors.message ? "message-error" : undefined}
@@ -244,17 +245,17 @@ const Contact = () => {
           </div>
 
           <button type="submit" className="send-btn" disabled={loading}>
-            {loading ? "ฬวัํ วแลัำวแ..." : "ลัำวแ"}
+            {loading ? "ุฌุงุฑู ุงูุฅุฑุณุงู..." : "ุฅุฑุณุงู"}
           </button>
 
-          <p className="contact-hint">ไอสัใ ฮีๆีํส฿ก ๆแไ ไิวั฿ ศํวไวส฿ ใฺ รํ ฬๅษ รฮั์.</p>
+          <p className="contact-hint">ูู ูุดุงุฑู ุจูุงูุงุชู ู…ุน ุฃู ุทุฑู ุซุงูุซ. ุฑูู…ู ููุณุชุฎุฏู… ููุชูุงุตู ููุท.</p>
         </form>
 
         <div className="contact-info">
-          <h3>ศํวไวส วแสๆวีแ</h3>
-          <p>วแๅวสÝ: <a href="tel:+96551751604">+965 5175 1604</a></p>
-          <p>วแศัํฯ: <a href="mailto:info@kuwait.com">info@kuwait.com</a></p>
-          <p>วแฺไๆวไ: วแ฿ๆํส - ิวัฺ วแใหวแ - ใศไ์ 12</p>
+          <h3>ุจูุงูุงุช ุงูุชูุงุตู</h3>
+          <p>ูุงุชู: <a href="tel:+96551751604">+965 5175 1604</a></p>
+          <p>ุงูุจุฑูุฏ: <a href="mailto:info@kuwait.com">info@kuwait.com</a></p>
+          <p>ุงูุนููุงู: ุงููููุช - ู…ุฏููุฉ ุงููููุช - ุดุงุฑุน 12</p>
         </div>
       </div>
     </div>
